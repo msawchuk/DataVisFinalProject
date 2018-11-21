@@ -29,12 +29,9 @@ function plot_it() {
     end_date = new Date(2018, 0, 1);
 
     preprocess_tree(price_data, '', 0, start_date, end_date);
-    //need to change when we add more stuff
-    for(var i = 0; i <price_data.children.length; i++){
-        find_valid_data(price_data.children[i]);
-    }
+    find_valid_data(price_data);
     aggregate(price_data);
-    for(var i = 0; i<price_data.valid_data.length; i++){
+    for(var i = 0; i<price_data.length; i++){
         std_dev(price_data.valid_data[i]);
         deviation_pct(price_data.valid_data[i]);
     }
@@ -42,10 +39,22 @@ function plot_it() {
 }
 
 function find_valid_data(node){
-    node.valid_data = [];
-    for(var i = 0; i < node.children.length; i++){
-        if(node.children[i].is_valid){
-            node.valid_data.push(node.children[i]);
+    if(node.children.length > 0 && !node.children[0].is_leaf) {
+        for(var i = 0; i < node.children.length; i++) {
+            find_valid_data(node.children[i]);
+        }
+        node.valid_data = [];
+        for(var i = 0; i < node.children.length; i++) {
+            for(var j = 0; j < node.children[i].valid_data.length; j++) {
+                node.valid_data.push(node.children[i].valid_data[j]);
+            }
+        }
+    } else {
+        node.valid_data = [];
+        for(var i = 0; i < node.children.length; i++){
+            if(node.children[i].is_valid){
+                node.valid_data.push(node.children[i]);
+            }
         }
     }
 }
@@ -59,7 +68,7 @@ function preprocess_tree(node, concat_names, depth) {
     if('children' in node)  {
         node.is_leaf = false;
         node.value = 0;
-        node.valid_data = node.children;
+        //node.valid_data = node.children;
         for(var c = 0; c < node.children.length; c++)  {
             node.children[c].parent = node;
             preprocess_tree(node.children[c], node.full_name, node.depth);
@@ -74,15 +83,18 @@ function preprocess_tree(node, concat_names, depth) {
             node.is_valid = true;
         }
         else{
-            node.is_valid= false;
+            node.is_valid = false;
+        }
+        if(isNaN(node.Close)) {
+            node.is_valid = false;
         }
     }
 }
 
 function aggregate(node) {
     if('valid_data' in node) {
-        for(var a = 0; a < node.valid_data.length; a++) {
-            aggregate(node.valid_data[a]);
+        for(var a = 0; a < node.children.length; a++) {
+            aggregate(node.children[a]);
         }
         for(var b = 0; b < node.valid_data.length; b++) {
             node.value += node.valid_data[b].value;
