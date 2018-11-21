@@ -2,23 +2,16 @@
 var start_date;
 var end_date;
 
-function expected_value(ticker){
-    var sum = 0;
-    for(var i = 0; i<ticker.children.length; i++){
-        sum += ticker.children[i].avg;
-    }
-    ticker.ev = sum/ticker.children.length;
-    return sum/ticker.children.length;
-}
+
 function std_dev(ticker){
-    var ev = expected_value(ticker);
+    var ev = ticker.value
     var deviation = 0;
-    for(var i = 0; i<ticker.children.length; i++){
-        deviation += Math.power(ev-ticker.children[i].avg, 2);
+    for(var i = 0; i<ticker.valid_data.length; i++){
+        deviation += Math.pow(ev-ticker.valid_data[i].value, 2);
     }
-    ticker.deviation = deviation
-    ticker.std_deviation = Math.sqrt(deviation);
-    return Math.sqrt(deviation);
+    ticker.deviation = deviation/ticker.valid_data.length;
+    ticker.std_deviation = Math.sqrt(ticker.deviation);
+    return Math.sqrt(ticker.deviation);
 }
 //given an array of tickers, calculates the average standard deviation
 function get_avg_std_deviation(array){
@@ -28,41 +21,30 @@ function get_avg_std_deviation(array){
     }
     return Math.sqrt(deviation);
 }
-function get_std_dev_of_std_dev(array){
-    var avg = get_avg_std_deviation(array)
-    var dev = 0;
-    for(var i = 0; i< array.length; i++){
-        dev += Math.power(avg - array[i].deviation, 2);
-    }
-    return Math.sqrt(dev)
-}
-function calculate_std_dev_dev(array){
-    var std_dev = get_std_dev_of_std_dev()
-    for(var i = 0; i<array.length; i++){
-        array[i].std_dev_std_dev = array[i].avg - std_dev;
-    }
+function deviation_pct(ticker){
+    ticker.deviation_pct = ticker.std_deviation / ticker.value;
 }
 function plot_it() {
     start_date = new Date(2017, 0, 1);
     end_date = new Date(2018, 0, 1);
-    console.log(start_date.getTime())
-    console.log(end_date)
+
     preprocess_tree(price_data, '', 0, start_date, end_date);
     //need to change when we add more stuff
     for(var i = 0; i <price_data.children.length; i++){
         find_valid_data(price_data.children[i]);
     }
-    console.log(price_data);
     aggregate(price_data);
-
-
+    for(var i = 0; i<price_data.valid_data.length; i++){
+        std_dev(price_data.valid_data[i]);
+        deviation_pct(price_data.valid_data[i]);
+    }
+    console.log(price_data)
 }
 
 function find_valid_data(node){
     node.valid_data = [];
     for(var i = 0; i < node.children.length; i++){
         if(node.children[i].is_valid){
-            console.log(node.children[i])
             node.valid_data.push(node.children[i]);
         }
     }
@@ -98,10 +80,9 @@ function preprocess_tree(node, concat_names, depth) {
 }
 
 function aggregate(node) {
-    console.log(node)
-    if(node.valid_data.length > 0) {
-        for(var a = 0; a < node.children.length; a++) {
-            aggregate(node.children[a]);
+    if('valid_data' in node) {
+        for(var a = 0; a < node.valid_data.length; a++) {
+            aggregate(node.valid_data[a]);
         }
         for(var b = 0; b < node.valid_data.length; b++) {
             node.value += node.valid_data[b].value;
