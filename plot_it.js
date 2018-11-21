@@ -1,4 +1,6 @@
 //given a ticker object, calculates probability of
+var start_date;
+var end_date;
 function probability_density(ticker, val){
     var num = Math.round(val*ticker.children.length);
     return ticker.children[i].avg
@@ -25,10 +27,28 @@ function get_avg_deviation(array){
 }
 
 function plot_it() {
-    preprocess_tree(price_data, '', 0);
+    start_date = new Date(2017, 0, 1);
+    end_date = new Date(2018, 0, 1);
+    console.log(start_date.getTime())
+    console.log(end_date)
+    preprocess_tree(price_data, '', 0, start_date, end_date);
+    //need to change when we add more stuff
+    for(var i = 0; i <price_data.children.length; i++){
+        find_valid_data(price_data.children[i])
+    }
     aggregate(price_data);
 
     console.log(price_data);
+}
+
+function find_valid_data(node){
+    node.valid_data = [];
+    for(var i = 0; i < node.children.length; i++){
+        if(node.children[i].is_valid){
+            console.log(node.children[i])
+            node.valid_data.push(node.children[i]);
+        }
+    }
 }
 
 function preprocess_tree(node, concat_names, depth) {
@@ -49,6 +69,13 @@ function preprocess_tree(node, concat_names, depth) {
         node.is_leaf = true;
         node.value = +node.value;
         node.children = [];
+        node.Date = new Date(Date.parse(node.Date));
+        if(node.Date.getTime() >= start_date.getTime() && node.Date.getTime() <= end_date.getTime()){
+            node.is_valid = true;
+        }
+        else{
+            node.is_valid= false;
+        }
     }
 }
 
@@ -61,4 +88,5 @@ function aggregate(node) {
     for(var b = 0; b < node.children.length; b++) {
         node.value += node.children[b].value;
     }
+    node.value /= node.children
 }
