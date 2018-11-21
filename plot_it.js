@@ -1,7 +1,8 @@
 //given a ticker object, calculates probability of
 var start_date;
 var end_date;
-
+var width = 500;
+var height = 500;
 
 function std_dev(ticker){
     var ev = ticker.value
@@ -39,6 +40,9 @@ function plot_it() {
         deviation_pct(price_data.valid_data[i]);
     }
     console.log(price_data)
+    var packing = d3.pack(price_data).size([width, height]);
+    console.log(packing)
+
 }
 
 function find_valid_data(node){
@@ -68,6 +72,7 @@ function preprocess_tree(node, concat_names, depth) {
     else  {
         node.is_leaf = true;
         node.value = +node.Close;
+        node.sum_val = +node.Close;
         node.children = [];
         node.Date = new Date(Date.parse(node.Date));
         if(node.Date.getTime() >= start_date.getTime() && node.Date.getTime() <= end_date.getTime()){
@@ -84,7 +89,9 @@ function aggregate(node) {
         for(var a = 0; a < node.valid_data.length; a++) {
             aggregate(node.valid_data[a]);
         }
+        node.sum_val = 0;
         for(var b = 0; b < node.valid_data.length; b++) {
+            node.sum_val += node.valid_data[b].value;
             node.value += node.valid_data[b].value;
         }
         node.value /= node.valid_data.length
