@@ -23,3 +23,42 @@ function get_avg_deviation(array){
         
     }
 }
+
+function plot_it() {
+    preprocess_tree(price_data, '', 0);
+    aggregate(price_data);
+
+    console.log(price_data);
+}
+
+function preprocess_tree(node, concat_names, depth) {
+    node.full_name = depth==0 ? node.name : concat_names+'.'+node.name;
+    node.depth = depth+1;
+    if(node.depth == 1)
+        node.box = {ll:[0,0], ur:[1,1]};
+
+    if('children' in node)  {
+        node.is_leaf = false;
+        node.value = 0;
+        for(var c = 0; c < node.children.length; c++)  {
+            node.children[c].parent = node;
+            preprocess_tree(node.children[c], node.full_name, node.depth);
+        }
+    }
+    else  {
+        node.is_leaf = true;
+        node.value = +node.value;
+        node.children = [];
+    }
+}
+
+function aggregate(node) {
+    if(node.children.length > 0) {
+        for(var a = 0; a < node.children.length; a++) {
+            aggregate(node.children[a]);
+        }
+    }
+    for(var b = 0; b < node.children.length; b++) {
+        node.value += node.children[b].value;
+    }
+}

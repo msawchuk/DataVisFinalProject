@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang='en'>
+	<head>
+		<meta charset='utf-8'>
+		<title>Final Project</title>
+		<script type='text/javascript' src='d3.js'></script>
+	</head>
+	<body>
+	<script type='text/javascript' src='plot_it.js'></script>
+	<script type='text/javascript'>
+		d3.json('Data/price.json')
+		  .then(function(data)  {
+			  price_data = data;
+			  plot_it();
+		  })
+	</script>
+	</body>
+</html>
