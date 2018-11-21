@@ -38,6 +38,23 @@ function plot_it() {
     }
     console.log(price_data)
     var packing = d3.pack(price_data).size([width, height]);
+    var svg = d3.select('body').append('svg').attr('width', width).attr('height', height)
+    var vRoot = d3.hierarchy(price_data).sum(function(d){
+        if(d.depth <= 3){
+            return d.sum_val
+        }
+        else{
+            return 0;
+        }
+    })
+    console.log('line 50')
+    var vNodes = vRoot.descendants();
+    packing(vRoot);
+    svg.append('g').selectAll('circle').data(price_data).enter().append('circle')
+        .attr('x', d=> d.x)
+        .attr('y', d=> d.y)
+        .attr('r', d=> d.r)
+    console.log(price_data)
     console.log(packing)
 
 }
