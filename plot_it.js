@@ -4,6 +4,16 @@ var end_date;
 var width = 500;
 var height = 500;
 
+function remove_leaves(node){
+    if(node.children[0].is_leaf){
+        node.children = []
+    }
+    else{
+        for(var i = 0; i< node.children.length; i++){
+            remove_leaves(node.children[i])
+        }
+    }
+}
 function std_dev(ticker){
     var ev = ticker.value
     var deviation = 0;
@@ -37,23 +47,23 @@ function plot_it() {
         deviation_pct(price_data.valid_data[i]);
     }
     console.log(price_data)
-    var packing = d3.pack(price_data).size([width, height]);
-    var svg = d3.select('body').append('svg').attr('width', width).attr('height', height)
-    var vRoot = d3.hierarchy(price_data).sum(function(d){
-        if(d.depth <= 3){
-            return d.sum_val
-        }
-        else{
-            return 0;
-        }
-    })
-    console.log('line 50')
-    var vNodes = vRoot.descendants();
-    packing(vRoot);
-    svg.append('g').selectAll('circle').data(price_data).enter().append('circle')
+    remove_leaves(price_data);
+    console.log(price_data);
+    var packing = d3.pack().size([height, width]).padding(5);
+    var packRoot = d3.hierarchy(price_data);
+    console.log(packRoot)
+    var packNodes = packRoot.descendants();
+    packing(packRoot);
+    console.log(packNodes)
+    var svg = d3.select('body').append('svg').attr('width', 1000).attr('height', 1000)
+    svg.append('g').selectAll('circle').data(packNodes).enter().append('circle')
         .attr('x', d=> d.x)
         .attr('y', d=> d.y)
         .attr('r', d=> d.r)
+        .attr('fill', '#f00')
+        .attr('opacity', '.2')
+        .attr('id', d=> d.data.name)
+        .attr('transform', 'translate(500,500)')
     console.log(price_data)
     console.log(packing)
 
