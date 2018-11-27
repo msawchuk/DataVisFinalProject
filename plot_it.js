@@ -57,8 +57,8 @@ function plot_it() {
     console.log(packNodes)
     var svg = d3.select('body').append('svg').attr('width', 1000).attr('height', 1000)
     svg.append('g').selectAll('circle').data(packNodes).enter().append('circle')
-        .attr('x', d=> d.x)
-        .attr('y', d=> d.y)
+        .attr('cx', d=> d.x)
+        .attr('cy', d=> d.y)
         .attr('r', d=> d.r)
         .attr('fill', '#f00')
         .attr('opacity', '.2')
@@ -66,6 +66,8 @@ function plot_it() {
         .attr('transform', 'translate(500,500)')
     console.log(price_data)
     console.log(packing)
+    //var vec = new Victor(42, 1337);
+    //console.log(vec.x);
 
 }
 
