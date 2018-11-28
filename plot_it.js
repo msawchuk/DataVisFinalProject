@@ -46,16 +46,16 @@ function plot_it() {
         std_dev(price_data.valid_data[i]);
         deviation_pct(price_data.valid_data[i]);
     }
-    console.log(price_data)
+    console.log(price_data);
     remove_leaves(price_data);
     console.log(price_data);
     var packing = d3.pack().size([height, width]).padding(5);
     var packRoot = d3.hierarchy(price_data);
-    console.log(packRoot)
+    console.log(packRoot);
     var packNodes = packRoot.descendants();
     packing(packRoot);
-    console.log(packNodes)
-    var svg = d3.select('body').append('svg').attr('width', 1000).attr('height', 1000)
+    console.log(packNodes);
+    var svg = d3.select('body').append('svg').attr('width', 1000).attr('height', 1000);
     svg.append('g').selectAll('circle').data(packNodes).enter().append('circle')
         .attr('cx', d=> d.x)
         .attr('cy', d=> d.y)
@@ -64,11 +64,75 @@ function plot_it() {
         .attr('opacity', '.2')
         .attr('id', d=> d.data.name)
         .attr('transform', 'translate(500,500)')
-    console.log(price_data)
-    console.log(packing)
+        .attr('class', function(d) {
+            if(d.depth == 2) {
+                return "leaf";
+            } else {
+                return "nonleaf";
+            }
+        });
+    console.log(price_data);
+    console.log(packing);
+    var circles = d3.select('svg').selectAll('.leaf');
     //var vec = new Victor(42, 1337);
     //console.log(vec.x);
+   /* for(var i = 0; i < 2; i++) {
+        forces(circles);
+    }*/
+   forces(circles);
 
+}
+
+function forces(circles){
+    var constant = 10;
+    var forces = [];
+    circles.each(function(i) {
+        var force = new Victor(0, 0);
+        var circle1 = this;
+        //console.log(circle1.cx.animVal.value);
+        circles.each(function(d) {
+            var circle2 = this;
+            var subforce = new Victor(circle2.cx.animVal.value - circle1.cx.animVal.value,
+                circle2.cy.animVal.value - circle1.cy.animVal.value);
+            subforce = subforce.normalize();
+            if(distance(circle1, circle2) > 0) {
+                var magnitude = (constant * circle1.r.animVal.value * circle2.r.animVal.value /
+                    Math.pow(distance(circle1, circle2), 2));
+            } else {
+                var magnitude = 0;
+            }
+            //console.log(magnitude);
+            var magVec = new Victor(magnitude, magnitude);
+            subforce = subforce.multiply(magVec);
+            force.add(subforce);
+        })
+        //forces[i] = force;
+        forces.push(force);
+    })
+    console.log(forces);
+    var counter = 0;
+    console.log(circles)
+    circles.each(function(i) {
+        var circle1 = this;
+        //console.log(i.x);
+        console.log(i);
+        //console.log(circle1);
+        d3.select(circle1).attr('cx', function() { return i.x + forces[counter].x})
+              .attr('cy', function() { return i.y + forces[counter].y});
+        //i.x += forces[counter].x;
+        //i.y += forces[counter].y;
+        console.log(forces[counter]);
+        counter++;
+    })
+}
+
+function distance(circle1, circle2) {
+    return Math.sqrt(Math.pow((circle1.cx.animVal.value - circle2.cx.animVal.value), 2) +
+        Math.pow((circle1.cy.animVal.value - circle2.cy.animVal.value), 2));
+}
+
+function intersecting(circle1, circle2) {
+    return (distance(circle1, circle2) < (circle1.r + circle2.r));
 }
 
 function find_valid_data(node){
