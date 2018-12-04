@@ -454,3 +454,55 @@ function aggregate(node) {
         node.value /= node.valid_data.length
     }
 }
+function find_leftmost(arr){
+    var most = arr[0];
+    for(var i = 1; i<arr.length; i++){
+        if(arr[i].position.y - node.radius < most.position.y -most.radius){
+            most = arr[i];
+        }
+    }
+    return most;
+}
+function get_envelope(node, uncertainty){
+    var left_circ = find_leftmost(node.children)
+    circ.envelope_radius = circ.radius * (1+uncertainty);
+
+}
+function get_intersect(cur, arr, direction) {
+    var intersections = [];
+
+    for (let i = 0; i < arr.length; i++) {
+        if (!(cur === arr[i])) {
+            if (intersects(arr[i], cur)) {
+                var intersectionPoints = intersection(arr[i], cur);
+                intersections.push({
+                    'point': intersectionPoints[0],
+                    'index': i
+                });
+                intersections.push({
+                    'point': intersectionPoints[1],
+                    'index': i
+                });
+            }
+        }
+    }
+    return leftmost_intersect(intersections)
+}
+function intersects(circ1, circ2){
+    var dx = circ1.position.x -circ2.position.x;
+    var dy = circ1.position.y - circ2.position.y;
+    var dist = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+    return (dist <= (circ1.radius + circ2.radius) && (dist >= Math.abs(circ1.radius - circ2.radius)));
+}
+function intersection(circ1, circ2){
+
+}
+function leftmost_intersect(intersections){
+    var left = intersections[0]
+    for(var i = 1; i<intersections.length; i++){
+        if(intersections[i].y < left.y){
+            left = intersections[i];
+        }
+    }
+    return left
+}
