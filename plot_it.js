@@ -46,25 +46,107 @@ function plot_it() {
         std_dev(price_data.valid_data[i]);
         deviation_pct(price_data.valid_data[i]);
     }
-    console.log(price_data);
+    //console.log(price_data);
     remove_leaves(price_data);
-    console.log(price_data);
+    //console.log(price_data);
     var svg = d3.select('body').append('svg').attr('width', 1000).attr('height', 1000);
+
+    var nodes = [];
+    var count = 0;
+    category = 0;
     price_data.children.forEach(function(element) {
+        element.children.forEach(function(element2) {
+            element2.x = Math.cos(category / 3 * 2 * Math.PI) * (200 + 400 * Math.random());
+            element2.y = Math.sin(category / 3 * 2 * Math.PI) * (200 + 400 * Math.random());
+            //element2.x = 750 * Math.random();
+            //element2.y = 750 * Math.random();
+            //element2.radius = element2.value / 10;
+            element2.radius = 40;
+            element2.cat = category;
+            nodes.push(element2);
+            count++;
+        })
+        category++;
+    })
+
+    color_scale = d3.scaleLinear()
+        .domain([0, 1500])
+        .range([0, 100]);
+
+    var force = d3.forceSimulation(nodes)
+        .force("gravity", d3.forceManyBody().strength(400))
+        .force("collide", d3.forceCollide(d=>d.radius).iterations(600))
+        .force("center", d3.forceCenter(400,400));
+
+    /*var force2 = d3.forceSimulation(price_data.children[0])
+        .force("g", d3.forceManyBody().strength(450))*/
+
+    console.log(nodes);
+
+    var t = svg.selectAll('q').data(nodes).enter().append('circle')
+        .attr('cx', d=> d.x)
+        .attr('cy', d=> d.y)
+        .attr('r', d=> d.radius - 4)
+        .attr('fill', d=> d3.lab(color_scale(d.value),50,0))
+        .attr('opacity', '.2')
+
+    svg.selectAll('circle').on('click', function() {
+        svg.selectAll('text').remove()
+        svg.selectAll('circle').each(function(d) {
+            svg.append('text')
+                .attr('x', this.cx.animVal.value)
+                .attr('y', this.cy.animVal.value)
+                .attr('text-anchor', 'middle')
+                .attr('font-size', '12px')
+                .text(d.name);
+        })
+    })
+
+    var ticked = function() {
+        t
+            .attr("cx", function(d) { return d.x; })
+            .attr("cy", function(d) { return d.y; });
+    }
+
+    force
+        .nodes(nodes)
+        .on("tick", ticked);
+
+    /*force2
+        .nodes(price_data.children[0])
+        .on("tick", ticked);*/
+
+    //t.append('text').attr('text-anchor', 'middle').attr('font-size', '12px').text(d=>d.name);
+    /*var node = svg.selectAll("circle")
+        .data(nodes)
+        .enter().append("g").call(force.drag);
+
+    node.append("circle")
+        .style("fill", function (d) {
+            return color(d.cluster);
+        })
+        .attr("r", function(d){return d.radius})
+
+    node.append("text")
+        .attr("dy", ".3em")
+        .style("text-anchor", "middle")
+        .text(function(d) { return d.name; });*/
+    /*price_data.children.forEach(function(element) {
         element.children.forEach(function(element2) {
             element2.position = new Victor(10,20).randomize(new Victor(100,100), new Victor(500,500));
             element2.velocity = new Victor();
+            element2.newVel = new Victor();
             element2.acceleration = new Victor();
             element2.radius = element2.value / 10;
         })
     });
-    console.log(price_data);
+    //console.log(price_data);
+    removeIntersections(price_data, price_data);
     for(var i = 0; i < 1; i++) {
         price_data.children.forEach(function(element) {
-            calculateMotion(element);
+            calculateMotion(element, price_data);
         })
     }
-
     var leaf_data = [];
     price_data.children.forEach(function(element) {
         element.children.forEach(function(element2) {
@@ -85,8 +167,9 @@ function plot_it() {
 
     svg.selectAll('rect').on('click', function(d) {
         svg.selectAll('circle').remove();
+        removeIntersections(price_data, price_data);
         price_data.children.forEach(function(element) {
-            calculateMotion(element);
+            calculateMotion(element, price_data);
         })
         var leaf_data = [];
         price_data.children.forEach(function(element) {
@@ -100,38 +183,9 @@ function plot_it() {
             .attr('r', d=> d.radius)
             .attr('fill', '#f00')
             .attr('opacity', '.2')
-    })
+    })*/
 
     console.log(price_data);
-
-    /*var packing = d3.pack().size([height, width]).padding(5);
-    var packRoot = d3.hierarchy(price_data);
-    console.log(packRoot);
-    var packNodes = packRoot.descendants();
-    packing(packRoot);
-    console.log(packNodes);
-    var svg = d3.select('body').append('svg').attr('width', 1000).attr('height', 1000);
-    svg.append('g').selectAll('circle').data(packNodes).enter().append('circle')
-        .attr('cx', d=> d.x)
-        .attr('cy', d=> d.y)
-        .attr('r', d=> d.r)
-        .attr('fill', '#f00')
-        .attr('opacity', '.2')
-        .attr('id', d=> d.data.name)
-        .attr('transform', 'translate(200,200)')
-        .attr('class', function(d) {
-            if(d.depth == 2) {
-                return "leaf";
-            } else {
-                return "nonleaf";
-            }
-        });
-    console.log(price_data);
-    console.log(packing);
-    var circles = d3.select('svg').selectAll('.leaf');
-    for(var i = 0; i < 1; i++) {
-        forces(circles);
-    }*/
 
 }
 
@@ -139,7 +193,7 @@ function getForce(node1, node2) {
     if(node1.position == node2.position) {
         return new Victor;
     }
-    var gravConstant = 1;
+    var gravConstant = 10;
     var difference = new Victor().copy(node1.position);
     difference.subtract(node2.position);
     var mag = (gravConstant * node1.radius * node2.radius) / difference.dot(difference);
@@ -150,27 +204,104 @@ function getForce(node1, node2) {
     return direction.multiply(magnitude);
 }
 
-function calculateMotion(parentNode) {
+function calculateMotion(parentNode, allData) {
     var accelerations = [];
-    if(true) {
         parentNode.children.forEach(function(element) {
             var force = new Victor();
             parentNode.children.forEach(function(element2) {
                 force = force.add(getForce(element, element2));
-                console.log(element.name)
-                console.log(element2.name)
-                console.log(getForce(element, element2))
             })
             accelerations.push(force.divide(new Victor(element.radius, element.radius)));
         })
         var counter = 0;
-        console.log(accelerations);
         parentNode.children.forEach(function(element) {
             element.velocity = element.velocity.add(accelerations[counter]);
             element.position = element.position.add(element.velocity);
             counter++;
         })
+
+}
+
+//Need to figure out a way to have the circles not be intersecting
+function calculateCollisions(data) {
+    data.children.forEach(function(element1) {
+        element1.children.forEach(function(circle1) {
+            if(intersectsAny(circle1, data)) {
+                data.children.forEach(function(element2) {
+                    element2.children.forEach(function(circle2) {
+                        if(intersecting(circle1, circle2) && (circle1.name != circle2.name)) {
+                            /*circle1.newVel = new Victor(((circle1.radius - circle2.radius) / (circle1.radius + circle2.radius)),
+                                (circle1.radius - circle2.radius) / (circle1.radius + circle2.radius)).multiply(circle1.velocity)
+                                .add(new Victor (2 * circle2.radius / (circle1.radius + circle2.radius),
+                                    2 * circle2.radius / (circle1.radius + circle2.radius)).multiply(circle2.velocity));*/
+                            var dist = circle1.radius + circle2.radius - distance(circle1, circle2);
+                            var initPos = circle1.position;
+                            var initPos1 = circle1.position;
+                            var dir = initPos.subtract(circle2.position).normalize();
+                            var translationVec = dir.multiply(new Victor(dist/2, dist/2));
+                            console.log(translationVec);
+                            //console.log(translationVec);
+                            circle1.position = circle1.position.add(translationVec);
+                            circle1.velocity = new Victor();
+                            initPos = circle2.position;
+                            dir = initPos.subtract(initPos1).normalize();
+                            translationVec = dir.multiply(new Victor(dist/2, dist/2));
+                            console.log(translationVec);
+                            circle2.position = circle2.position.add(translationVec);
+                            circle2.velocity = new Victor();
+                        }
+                    })
+                })
+            }
+        })
+    })
+}
+
+//moves all circles in moveableData so that they do not intersect any circles in allData
+//removes all intersections between circles if moveableData == allData, or if all circles that
+//are in allData but not moveableData do not intersect
+function removeIntersections(moveableData, allData) {
+    if(moveableData.depth == 3) {
+        var count = 1;
+        while(intersectsAny(moveableData, allData)) {
+            moveableData.position.x += 20;
+        }
+    } else {
+        moveableData.children.forEach(function (element) {
+            removeIntersections(element, allData);
+        })
     }
+}
+
+//tells whether circle intersects any circles held in data
+function intersectsAny(circle, data) {
+    if(data.depth == 3) {
+        return (intersecting(circle, data) && !(hasSameName(circle, data)));
+    } else {
+        var bool = false;
+        data.children.forEach(function(element) {
+            if(intersectsAny(circle, element)) {
+                bool = true;
+            }
+        })
+        return bool;
+    }
+
+}
+
+//find distance between two circles in the tree
+function distance(circle1, circle2) {
+    return Math.sqrt(Math.pow((circle1.position.x - circle2.position.x), 2) +
+        Math.pow((circle1.position.y - circle2.position.y), 2));
+}
+
+//tells whether two circles in the tree are intersecting
+function intersecting(circle1, circle2) {
+    return (distance(circle1, circle2) < (circle1.radius + circle2.radius));
+}
+
+function hasSameName(circle1, circle2) {
+    return circle1.name == circle2.name;
 }
 
 /*function forces(circles){
@@ -218,14 +349,43 @@ function calculateMotion(parentNode) {
     })
 }*/
 
-function distance(circle1, circle2) {
+/*function distance(circle1, circle2) {
     return Math.sqrt(Math.pow((circle1.cx.animVal.value - circle2.cx.animVal.value), 2) +
         Math.pow((circle1.cy.animVal.value - circle2.cy.animVal.value), 2));
-}
+}*/
 
-function intersecting(circle1, circle2) {
+/*function intersecting(circle1, circle2) {
     return (distance(circle1, circle2) < (circle1.r.animVal.value + circle2.r.animVal.value));
-}
+}*/
+
+/*var packing = d3.pack().size([height, width]).padding(5);
+    var packRoot = d3.hierarchy(price_data);
+    console.log(packRoot);
+    var packNodes = packRoot.descendants();
+    packing(packRoot);
+    console.log(packNodes);
+    var svg = d3.select('body').append('svg').attr('width', 1000).attr('height', 1000);
+    svg.append('g').selectAll('circle').data(packNodes).enter().append('circle')
+        .attr('cx', d=> d.x)
+        .attr('cy', d=> d.y)
+        .attr('r', d=> d.r)
+        .attr('fill', '#f00')
+        .attr('opacity', '.2')
+        .attr('id', d=> d.data.name)
+        .attr('transform', 'translate(200,200)')
+        .attr('class', function(d) {
+            if(d.depth == 2) {
+                return "leaf";
+            } else {
+                return "nonleaf";
+            }
+        });
+    console.log(price_data);
+    console.log(packing);
+    var circles = d3.select('svg').selectAll('.leaf');
+    for(var i = 0; i < 1; i++) {
+        forces(circles);
+    }*/
 
 function find_valid_data(node){
     if(node.children.length > 0 && !node.children[0].is_leaf) {
