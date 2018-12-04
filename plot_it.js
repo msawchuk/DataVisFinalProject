@@ -46,9 +46,7 @@ function plot_it() {
         std_dev(price_data.valid_data[i]);
         deviation_pct(price_data.valid_data[i]);
     }
-    //console.log(price_data);
     remove_leaves(price_data);
-    //console.log(price_data);
     var svg = d3.select('body').append('svg').attr('width', 1000).attr('height', 1000);
 
     var nodes = [];
@@ -56,8 +54,8 @@ function plot_it() {
     category = 0;
     price_data.children.forEach(function(element) {
         element.children.forEach(function(element2) {
-            element2.x = Math.cos(category / 3 * 2 * Math.PI) * (200 + 400 * Math.random());
-            element2.y = Math.sin(category / 3 * 2 * Math.PI) * (200 + 400 * Math.random());
+            element2.x = Math.cos(category / 3 * 2 * Math.PI) * (400 + 200 * Math.random());
+            element2.y = Math.sin(category / 3 * 2 * Math.PI) * (400 + 200 * Math.random());
             //element2.x = 750 * Math.random();
             //element2.y = 750 * Math.random();
             //element2.radius = element2.value / 10;
@@ -69,17 +67,19 @@ function plot_it() {
         category++;
     })
 
-    color_scale = d3.scaleLinear()
-        .domain([0, 1500])
+    color_scale = d3.scaleLog()
+        .domain([1, 1500])
         .range([0, 100]);
 
+    var catColors = [];
+    catColors.push(d3.lab(34.28, 42.67, -35.23));
+    catColors.push(d3.lab(50.22, -1, 38.39));
+    catColors.push(d3.lab(51.87, -30.43, 2.67));
+
     var force = d3.forceSimulation(nodes)
-        .force("gravity", d3.forceManyBody().strength(400))
+        .force("gravity", d3.forceManyBody().strength(600))
         .force("collide", d3.forceCollide(d=>d.radius).iterations(600))
         .force("center", d3.forceCenter(400,400));
-
-    /*var force2 = d3.forceSimulation(price_data.children[0])
-        .force("g", d3.forceManyBody().strength(450))*/
 
     console.log(nodes);
 
@@ -87,20 +87,11 @@ function plot_it() {
         .attr('cx', d=> d.x)
         .attr('cy', d=> d.y)
         .attr('r', d=> d.radius - 4)
-        .attr('fill', d=> d3.lab(color_scale(d.value),50,0))
+        .attr('fill', d=> d3.lab(50 + 0.5*color_scale(d.value),100 - color_scale(d.value),0.5 *color_scale(d.value)))
         .attr('opacity', '.2')
-
-    svg.selectAll('circle').on('click', function() {
-        svg.selectAll('text').remove()
-        svg.selectAll('circle').each(function(d) {
-            svg.append('text')
-                .attr('x', this.cx.animVal.value)
-                .attr('y', this.cy.animVal.value)
-                .attr('text-anchor', 'middle')
-                .attr('font-size', '12px')
-                .text(d.name);
-        })
-    })
+        .attr('category', d=>d.cat)
+        .attr('stroke', d=>catColors[d.cat])
+        .attr('stroke-width', '3')
 
     var ticked = function() {
         t
@@ -110,13 +101,70 @@ function plot_it() {
 
     force
         .nodes(nodes)
-        .on("tick", ticked);
+        .on("tick", ticked)
+        .on("end", function() {
+            svg.selectAll('text').remove()
+            svg.selectAll('circle').each(function(d) {
+                svg.append('text')
+                    .attr('x', this.cx.animVal.value)
+                    .attr('y', this.cy.animVal.value)
+                    .attr('text-anchor', 'middle')
+                    .attr('font-size', '12px')
+                    .text(d.name);
+            })
+        });
 
-    /*force2
-        .nodes(price_data.children[0])
-        .on("tick", ticked);*/
+    /*var nodes1 = getCat(nodes, 0);
+    var force1 = d3.forceSimulation(nodes1)
+        .force("gravity", d3.forceManyBody().strength(600))
+        .force("collide", d3.forceCollide(d=>d.radius).iterations(400))
+        .force("center", d3.forceCenter(400,400));
+    force1
+        .nodes(nodes1)
+        .on("tick", ticked)
+        .on("end", function() {
+            nodes.forEach(function(element) {
+                if(element.cat <= 0) {
+                    element.fx = element.x;
+                    element.fy = element.y;
+                }
+            })
+            var nodes2 = getCat(nodes, 1);
+            var force2 = d3.forceSimulation(nodes2)
+                .force("gravity", d3.forceManyBody().strength(600))
+                .force("collide", d3.forceCollide(d=>d.radius).iterations(400))
+                .force("center", d3.forceCenter(400,400));
+            force2
+                .nodes(nodes2)
+                .on("tick", ticked)
+                .on("end", function() {
+                    nodes.forEach(function(element) {
+                        if(element.cat <= 1) {
+                            element.fx = element.x;
+                            element.fy = element.y;
+                        }
+                    })
+                    var nodes3 = getCat(nodes, 2);
+                    var force3 = d3.forceSimulation(nodes3)
+                        .force("gravity", d3.forceManyBody().strength(600))
+                        .force("collide", d3.forceCollide(d=>d.radius).iterations(400))
+                        .force("center", d3.forceCenter(400,400));
+                    force3
+                        .nodes(nodes3)
+                        .on("tick", ticked)
+                        .on("end", function() {
+                            svg.selectAll('circle').each(function(d) {
+                                svg.append('text')
+                                    .attr('x', this.cx.animVal.value)
+                                    .attr('y', this.cy.animVal.value)
+                                    .attr('text-anchor', 'middle')
+                                    .attr('font-size', '12px')
+                                    .text(d.name);
+                            })
+                        });
+                });
+        });*/
 
-    //t.append('text').attr('text-anchor', 'middle').attr('font-size', '12px').text(d=>d.name);
     /*var node = svg.selectAll("circle")
         .data(nodes)
         .enter().append("g").call(force.drag);
@@ -187,6 +235,16 @@ function plot_it() {
 
     console.log(price_data);
 
+}
+
+function getCat(data, catNum) {
+    var arr = [];
+    data.forEach(function(element) {
+        if(element.cat <= catNum) {
+            arr.push(element);
+        }
+    })
+    return arr;
 }
 
 function getForce(node1, node2) {
