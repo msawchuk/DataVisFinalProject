@@ -362,6 +362,82 @@ function hasSameName(circle1, circle2) {
     return circle1.name == circle2.name;
 }
 
+
+function buildContour(nodes, enlargement){
+    var outerCircs = getOuterCircle(nodes, enlargement);
+}
+function getOuterCircle(nodes, enlargement){
+    //get deep copy
+    var bigCircles = circles.map(function (d) {
+        return Object.assign({}, d)
+    });
+    bigCircles.forEach(function (circle) {
+        circle.r += enlargement;
+    });
+    var leftmost = bigCircles[0];
+    for (var i = 1; i < outerCircs.length; i++) {
+        if (bigCircles[i].x - bigCircles[i].r < leftMost.x - leftmost.r) {
+            leftmost = bigCircles[i];
+        }
+    }
+    var bubbles = [];
+    var curCircle = leftmost;
+    var dir = new Victor(0, -1);
+    var cont = true;
+    while(cont){
+        var intersect = nextClockwise(curCircle, bigCircles, dir)
+        if(intersect == 'undefined'){
+            cont = false;
+        }
+        else{
+            dir = intersection.point - Victor(curCircle.x, curCircle.y)
+
+        }
+
+    }
+}
+function createBubble(rings){
+    var arcs = [];
+    for(var i = 0; i<rings.length; i++){
+        var circle = rings[i].circle
+        var intersect1 = outerCircleRing[i].intersectionPoint;
+        //loop back to 0 at end
+        var intersect2 = outerCircleRing[(i + 1) % outerCircleRing.length].intersectionPoint;
+        var radius1 = intersect1.subtract(Victor(circle.x, circle.y))
+        var radius2 = intersect2.subtract(Victor(circle.x, circle.y))
+        var angle1= Math.acos(radius1.dot(Victor(-1,0))/radius1.length());
+        var angle2 = Math.acos(radius2.dot(Victor(-1,0))/radius.length());
+        arcs.push({
+            center: Victor(circle.x, circle.y),
+            startAngle: angle1,
+            endAngle : angle2,
+            radius : circle.radius
+        })
+    }
+    return arcs
+}
+function makePaths(arcs){
+    var paths = [];
+    var arcGenerator = d3.arc()
+    arcs.forEach(function(arc){
+        var tempStartAngle = arc.startAngle;
+        if(tempStartAngle > arc.endAngle){
+            tempStartAngle -= 2*Math.PI
+        }
+        paths.push({
+            d: arcGen({
+                innerRadius: arc.radius,
+                outerRadius: arc.radius,
+                startAngle: tempStartAngle,
+                endAngle: arc.endAngle
+            }),
+            transform: "translate(" + arc.center.x + "," + arc.center.y + ")"
+        })
+    })
+}
+function nextClockwise(curCircle, circles, dir){
+
+}
 /*function forces(circles){
     var constant = 10;
     var forces = [];
