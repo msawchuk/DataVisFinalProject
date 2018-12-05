@@ -56,6 +56,10 @@ function plot_it() {
     remove_leaves(price_data);
     var svg = d3.select('body').append('svg').attr('width', 1000).attr('height', 1000);
 
+    size_scale = d3.scaleLog()
+        .domain([20, 1500])
+        .range([10, 80])
+
     var nodes = [];
     var count = 0;
     category = 0;
@@ -66,7 +70,7 @@ function plot_it() {
             //element2.x = 750 * Math.random();
             //element2.y = 750 * Math.random();
             //element2.radius = element2.value / 10;
-            element2.radius = 40;
+            element2.radius = size_scale(element2.value);
             element2.cat = category;
             nodes.push(element2);
             count++;
@@ -85,8 +89,8 @@ function plot_it() {
 
     var force = d3.forceSimulation(price_data.children[0].children)
         .force("gravity", d3.forceManyBody().strength(600))
-        .force("collide", d3.forceCollide(d=>d.radius).iterations(400))
-    //.force("center", d3.forceCenter(400,400));
+        .force("collide", d3.forceCollide(d=>d.radius).iterations(300))
+        .force("center", d3.forceCenter(600,400));
     var t = svg.selectAll('q').data(price_data.children[0].children).enter().append('circle')
         .attr('cx', d=> d.x)
         .attr('cy', d=> d.y)
@@ -106,15 +110,19 @@ function plot_it() {
         .on("tick", ticked)
         .on("end", function() {
             var arcdata = createEnvelope(price_data.children[0].children, price_data.children[0].enlargement);
-            svg.append('path')
-                .attr('d', arcdata)
-                .attr('stroke', '#000')
-                .attr('stroke-width', 4)
-                .attr('fill', 'none')
+            arcdata.forEach(function(element) {
+                var path = d3.path();
+                path.arc(element.x, element.y, element.radius, element.startAngle-Math.PI/2, element.endAngle-Math.PI/2, false);
+                svg.append('path')
+                    .attr('d', path)
+                    .attr('fill', 'none')
+                    .attr('stroke', '#000')
+                    .attr('stroke-width', '4')
+            })
             var force2 = d3.forceSimulation(price_data.children[1].children)
                 .force("gravity", d3.forceManyBody().strength(600))
-                .force("collide", d3.forceCollide(d=>d.radius).iterations(400))
-            //.force("center", d3.forceCenter(400,400));
+                .force("collide", d3.forceCollide(d=>d.radius).iterations(300))
+                .force("center", d3.forceCenter(200,600));
             var u = svg.selectAll('q').data(price_data.children[1].children).enter().append('circle')
                 .attr('cx', d=> d.x)
                 .attr('cy', d=> d.y)
@@ -133,11 +141,20 @@ function plot_it() {
                 .nodes(price_data.children[1].children)
                 .on("tick", ticked)
                 .on("end", function() {
-                    createEnvelope(price_data.children[1].children, price_data.children[1].enlargement);
+                    var arcdata = createEnvelope(price_data.children[1].children, price_data.children[1].enlargement);
+                    arcdata.forEach(function(element) {
+                        var path = d3.path();
+                        path.arc(element.x, element.y, element.radius, element.startAngle-Math.PI/2, element.endAngle-Math.PI/2, false);
+                        svg.append('path')
+                            .attr('d', path)
+                            .attr('fill', 'none')
+                            .attr('stroke', '#000')
+                            .attr('stroke-width', '4')
+                    })
                     var force3 = d3.forceSimulation(price_data.children[2].children)
                         .force("gravity", d3.forceManyBody().strength(600))
-                        .force("collide", d3.forceCollide(d=>d.radius).iterations(400))
-                    //.force("center", d3.forceCenter(400,400));
+                        .force("collide", d3.forceCollide(d=>d.radius).iterations(300))
+                        .force("center", d3.forceCenter(400,200));
                     var v = svg.selectAll('q').data(price_data.children[2].children).enter().append('circle')
                         .attr('cx', d=> d.x)
                         .attr('cy', d=> d.y)
@@ -156,6 +173,16 @@ function plot_it() {
                         .nodes(price_data.children[2].children)
                         .on("tick", ticked)
                         .on("end", function() {
+                            var arcdata = createEnvelope(price_data.children[2].children, price_data.children[2].enlargement);
+                            arcdata.forEach(function(element) {
+                                var path = d3.path();
+                                path.arc(element.x, element.y, element.radius, element.startAngle-Math.PI/2, element.endAngle-Math.PI/2, false);
+                                svg.append('path')
+                                    .attr('d', path)
+                                    .attr('fill', 'none')
+                                    .attr('stroke', '#000')
+                                    .attr('stroke-width', '4')
+                            })
                             svg.selectAll('circle').each(function(d) {
                                 svg.append('text')
                                     .attr('x', this.cx.animVal.value)
@@ -169,48 +196,6 @@ function plot_it() {
                 })
         });
 
-
-
-    /*
-    var force = d3.forceSimulation(nodes)
-        .force("gravity", d3.forceManyBody().strength(600))
-        .force("collide", d3.forceCollide(d=>d.radius).iterations(600))
-        .force("center", d3.forceCenter(400,400));
-
-    console.log(nodes);
-
-    var t = svg.selectAll('q').data(nodes).enter().append('circle')
-        .attr('cx', d=> d.x)
-        .attr('cy', d=> d.y)
-        .attr('r', d=> d.radius - 4)
-        .attr('fill', d=> d3.lab(50 + 0.5*color_scale(d.value),100 - color_scale(d.value),0.5 *color_scale(d.value)))
-        .attr('opacity', '.2')
-        .attr('category', d=>d.cat)
-        .attr('stroke', d=>catColors[d.cat])
-        .attr('stroke-width', '3')
-
-    var ticked = function() {
-        t
-            .attr("cx", function(d) { return d.x; })
-            .attr("cy", function(d) { return d.y; });
-    }
-
-    force
-        .nodes(nodes)
-        .on("tick", ticked)
-        .on("end", function() {
-            svg.selectAll('text').remove()
-            svg.selectAll('circle').each(function(d) {
-                svg.append('text')
-                    .attr('x', this.cx.animVal.value)
-                    .attr('y', this.cy.animVal.value)
-                    .attr('text-anchor', 'middle')
-                    .attr('font-size', '12px')
-                    .text(d.name);
-            })
-        });
-       */
-
     console.log(price_data);
 
 }
@@ -221,12 +206,13 @@ function createEnvelope(nodes, enlargement) {
         .range([0,0.8])
     enlargement = scale(enlargement);
    var bubbles =  getOuterCircle(nodes, enlargement);
-    var arcs = createBubble(bubbles);
-    return makePaths(arcs);
+   return createBubble(bubbles);
+   //var arcs = createBubble(bubbles);
+   //return makePaths(arcs);
 
 }
 
-function getCat(data, catNum) {
+/*function getCat(data, catNum) {
     var arr = [];
     data.forEach(function(element) {
         if(element.cat <= catNum) {
@@ -234,7 +220,7 @@ function getCat(data, catNum) {
         }
     })
     return arr;
-}
+}*/
 
 function getForce(node1, node2) {
     if(node1.position == node2.position) {
@@ -251,7 +237,7 @@ function getForce(node1, node2) {
     return direction.multiply(magnitude);
 }
 
-function calculateMotion(parentNode, allData) {
+/*function calculateMotion(parentNode, allData) {
     var accelerations = [];
         parentNode.children.forEach(function(element) {
             var force = new Victor();
@@ -277,10 +263,10 @@ function calculateCollisions(data) {
                 data.children.forEach(function(element2) {
                     element2.children.forEach(function(circle2) {
                         if(intersecting(circle1, circle2) && (circle1.name != circle2.name)) {
-                            /*circle1.newVel = new Victor(((circle1.radius - circle2.radius) / (circle1.radius + circle2.radius)),
+                            /!*circle1.newVel = new Victor(((circle1.radius - circle2.radius) / (circle1.radius + circle2.radius)),
                                 (circle1.radius - circle2.radius) / (circle1.radius + circle2.radius)).multiply(circle1.velocity)
                                 .add(new Victor (2 * circle2.radius / (circle1.radius + circle2.radius),
-                                    2 * circle2.radius / (circle1.radius + circle2.radius)).multiply(circle2.velocity));*/
+                                    2 * circle2.radius / (circle1.radius + circle2.radius)).multiply(circle2.velocity));*!/
                             var dist = circle1.radius + circle2.radius - distance(circle1, circle2);
                             var initPos = circle1.position;
                             var initPos1 = circle1.position;
@@ -299,7 +285,7 @@ function calculateCollisions(data) {
             }
         })
     })
-}
+}*/
 
 //moves all circles in moveableData so that they do not intersect any circles in allData
 //removes all intersections between circles if moveableData == allData, or if all circles that
@@ -360,7 +346,7 @@ function getOuterCircle(nodes, enlargement){
     bigCircles.forEach(function (circle) {
         circle.radius += enlargement*circle.radius;
     });
-    var leftmost = bigCircles[0];
+    var leftmost = getLeftmost(bigCircles);
     for (var i = 1; i < bigCircles.length; i++) {
         if (bigCircles[i].x - bigCircles[i].r < leftmost.x - leftmost.r) {
             leftmost = bigCircles[i];
@@ -368,7 +354,7 @@ function getOuterCircle(nodes, enlargement){
     }
     var bubbles = [];
     var curCircle = leftmost;
-    var dir = new Victor(0, -1);
+    var dir = new Victor(-1,0);
     var cont = true;
     while(cont){
         var intersect = nextClockwise(curCircle, bigCircles, dir)
@@ -378,8 +364,7 @@ function getOuterCircle(nodes, enlargement){
         }
         else{
             curCircle = intersect.intersectsWith
-            var clone = intersect.point.clone()
-            dir = clone.subtract(Victor(curCircle.x, curCircle.y))
+            dir = intersect.point.clone().subtract(Victor(curCircle.x, curCircle.y))
             if(typeof bubbles[0] !== 'undefined' && curCircle === bubbles[0].circle
                 && intersect.point.distance(bubbles[0].intersectionPoint) <.01){
                 console.log('SCREEEEEEEEEEEEEEEEEEEEEEEEEEECH')
@@ -397,6 +382,15 @@ function getOuterCircle(nodes, enlargement){
     }
     return bubbles
 }
+function getLeftmost(circles) {
+    left = circles[0]
+    circles.forEach(function(element) {
+        if(element.x - element.radius < left.x - left.radius) {
+            left = element;
+        }
+    })
+    return left;
+}
 function createBubble(bubbles){
     var arcs = [];
     for(var i = 0; i < bubbles.length; i++){
@@ -406,10 +400,11 @@ function createBubble(bubbles){
         var intersect2 = bubbles[(i + 1) % bubbles.length].intersectionPoint.clone();
         var radius1 = intersect1.clone().subtract(Victor(circle.x, circle.y));
         var radius2 = intersect2.clone().subtract(Victor(circle.x, circle.y));
-        var angle1= Math.acos(radius1.dot(Victor(-1,0))/radius1.length());
-        var angle2 = Math.acos(radius2.dot(Victor(-1,0))/radius2.length());
+        var angle1 = get_angle(new Victor(0,-1), radius1);
+        var angle2 = get_angle(new Victor(0,-1), radius2);
         arcs.push({
-            center: Victor(circle.x, circle.y),
+            x: circle.x,
+            y: circle.y,
             startAngle: angle1,
             endAngle : angle2,
             radius : circle.radius
