@@ -65,8 +65,8 @@ function plot_it() {
     category = 0;
     price_data.children.forEach(function(element) {
         element.children.forEach(function(element2) {
-            element2.x = Math.cos(category / 3 * 2 * Math.PI) * (300 + 200 * Math.random()) + 400;
-            element2.y = Math.sin(category / 3 * 2 * Math.PI) * (200 + 200 * Math.random()) + 400;
+            element2.x = Math.cos(category / 3 * 2 * Math.PI) * (250 + 300 * Math.random()) + 400;
+            element2.y = Math.sin(category / 3 * 2 * Math.PI) * (150 + 350 * Math.random()) + 400;
             //element2.x = 750 * Math.random();
             //element2.y = 750 * Math.random();
             //element2.radius = element2.value / 10;
@@ -90,7 +90,7 @@ function plot_it() {
     var force = d3.forceSimulation(price_data.children[0].children)
         .force("gravity", d3.forceManyBody().strength(600))
         .force("collide", d3.forceCollide(d=>d.radius).iterations(300))
-        .force("center", d3.forceCenter(600,400));
+        .force("center", d3.forceCenter(600,450));
     var t = svg.selectAll('q').data(price_data.children[0].children).enter().append('circle')
         .attr('cx', d=> d.x)
         .attr('cy', d=> d.y)
@@ -154,7 +154,7 @@ function plot_it() {
                     var force3 = d3.forceSimulation(price_data.children[2].children)
                         .force("gravity", d3.forceManyBody().strength(600))
                         .force("collide", d3.forceCollide(d=>d.radius).iterations(300))
-                        .force("center", d3.forceCenter(400,200));
+                        .force("center", d3.forceCenter(350,200));
                     var v = svg.selectAll('q').data(price_data.children[2].children).enter().append('circle')
                         .attr('cx', d=> d.x)
                         .attr('cy', d=> d.y)
