@@ -54,8 +54,8 @@ function plot_it() {
     category = 0;
     price_data.children.forEach(function(element) {
         element.children.forEach(function(element2) {
-            element2.x = Math.cos(category / 3 * 2 * Math.PI) * (300 + 200 * Math.random()) + 400;
-            element2.y = Math.sin(category / 3 * 2 * Math.PI) * (200 + 200 * Math.random()) + 400;
+            element2.x = Math.cos(category / 3 * 2 * Math.PI) * (400 + 200 * Math.random());
+            element2.y = Math.sin(category / 3 * 2 * Math.PI) * (400 + 200 * Math.random());
             //element2.x = 750 * Math.random();
             //element2.y = 750 * Math.random();
             //element2.radius = element2.value / 10;
@@ -76,87 +76,6 @@ function plot_it() {
     catColors.push(d3.lab(50.22, -1, 38.39));
     catColors.push(d3.lab(51.87, -30.43, 2.67));
 
-    var force = d3.forceSimulation(price_data.children[0].children)
-        .force("gravity", d3.forceManyBody().strength(600))
-        .force("collide", d3.forceCollide(d=>d.radius).iterations(400))
-        //.force("center", d3.forceCenter(400,400));
-    var t = svg.selectAll('q').data(price_data.children[0].children).enter().append('circle')
-        .attr('cx', d=> d.x)
-        .attr('cy', d=> d.y)
-        .attr('r', d=> d.radius - 4)
-        .attr('fill', d=> d3.lab(50 + 0.5*color_scale(d.value),100 - color_scale(d.value),0.5 *color_scale(d.value)))
-        .attr('opacity', '.2')
-        .attr('category', d=>d.cat)
-        .attr('stroke', d=>catColors[d.cat])
-        .attr('stroke-width', '3')
-    var ticked = function() {
-        t
-            .attr("cx", function(d) { return d.x; })
-            .attr("cy", function(d) { return d.y; });
-    }
-    force
-        .nodes(price_data.children[0].children)
-        .on("tick", ticked)
-        .on("end", function() {
-            var force2 = d3.forceSimulation(price_data.children[1].children)
-                .force("gravity", d3.forceManyBody().strength(600))
-                .force("collide", d3.forceCollide(d=>d.radius).iterations(400))
-            //.force("center", d3.forceCenter(400,400));
-            var u = svg.selectAll('q').data(price_data.children[1].children).enter().append('circle')
-                .attr('cx', d=> d.x)
-                .attr('cy', d=> d.y)
-                .attr('r', d=> d.radius - 4)
-                .attr('fill', d=> d3.lab(50 + 0.5*color_scale(d.value),100 - color_scale(d.value),0.5 *color_scale(d.value)))
-                .attr('opacity', '.2')
-                .attr('category', d=>d.cat)
-                .attr('stroke', d=>catColors[d.cat])
-                .attr('stroke-width', '3')
-            ticked = function() {
-                u
-                    .attr("cx", function(d) { return d.x; })
-                    .attr("cy", function(d) { return d.y; });
-            }
-            force2
-                .nodes(price_data.children[1].children)
-                .on("tick", ticked)
-                .on("end", function() {
-                    var force3 = d3.forceSimulation(price_data.children[2].children)
-                        .force("gravity", d3.forceManyBody().strength(600))
-                        .force("collide", d3.forceCollide(d=>d.radius).iterations(400))
-                    //.force("center", d3.forceCenter(400,400));
-                    var v = svg.selectAll('q').data(price_data.children[2].children).enter().append('circle')
-                        .attr('cx', d=> d.x)
-                        .attr('cy', d=> d.y)
-                        .attr('r', d=> d.radius - 4)
-                        .attr('fill', d=> d3.lab(50 + 0.5*color_scale(d.value),100 - color_scale(d.value),0.5 *color_scale(d.value)))
-                        .attr('opacity', '.2')
-                        .attr('category', d=>d.cat)
-                        .attr('stroke', d=>catColors[d.cat])
-                        .attr('stroke-width', '3')
-                    ticked = function() {
-                        v
-                            .attr("cx", function(d) { return d.x; })
-                            .attr("cy", function(d) { return d.y; });
-                    }
-                    force3
-                        .nodes(price_data.children[2].children)
-                        .on("tick", ticked)
-                        .on("end", function() {
-                            svg.selectAll('circle').each(function(d) {
-                                svg.append('text')
-                                    .attr('x', this.cx.animVal.value)
-                                    .attr('y', this.cy.animVal.value)
-                                    .attr('text-anchor', 'middle')
-                                    .attr('font-size', '12px')
-                                    .text(d.name);
-                            })
-                        })
-                })
-        });
-
-
-
-    /*
     var force = d3.forceSimulation(nodes)
         .force("gravity", d3.forceManyBody().strength(600))
         .force("collide", d3.forceCollide(d=>d.radius).iterations(600))
@@ -194,7 +113,7 @@ function plot_it() {
                     .text(d.name);
             })
         });
-       */
+
 
     console.log(price_data);
 
@@ -353,11 +272,22 @@ function getOuterCircle(nodes, enlargement){
             cont = false;
         }
         else{
-            dir = intersection.point - Victor(curCircle.x, curCircle.y)
+            dir = intersection.point.subtract(Victor(curCircle.x, curCircle.y))
+            if(bigCircles[0] !== 'undefined' && intersect === bubbles[0] &&
+                intersect.intersectionPoint.distance(bubbles[0].intersectionPoint) <.0001){
+                cont = false;
+            }
+            else{
+                bubbles.push({
+                    circle: curCircle
+                    intersectionPoint: intersection.intersectionPoint
+                })
+            }
 
         }
 
     }
+    return bubbles
 }
 function createBubble(rings){
     var arcs = [];
@@ -398,9 +328,115 @@ function makePaths(arcs){
         })
     })
 }
-function nextClockwise(curCircle, circles, dir){
+function nextClockwise(currentCircle, circles, dir){
+    var intersections = []
 
+    for(var i = 0; i <circles.length; i++) {
+        if (circles[i] !== currentCircle && intersects(circles[i], currentCircle)) {
+            var intersections = get_intersect(currentCircle, circles[i]);
+            intersections.push({
+                point: intersections[0],
+                intersectsWith: circles[i]
+            })
+            intersections.push({
+                point: intersections[1],
+                intersectsWith: circles[i]
+            })
+        }
+        var leastAngle = 10;
+        var leastAngleIntersection;
+        for (var i = 0; i < intersections.length; i++) {
+            var angle = get_angle(dir, intersections[i].point.subtract(Victor(currentCircle.x, currentCircle.y)))
+            if (angle > .0001 && angle < leastAngle) {
+                leastAngle = angle
+                leastAngleIntersection = intersections[i];
+            }
+        }
+        return leastAngleIntersection
+    }
 }
+/*function forces(circles){
+    var constant = 10;
+    var forces = [];
+    circles.each(function(i) {
+        var force = new Victor(0, 0);
+        var circle1 = this;
+        circles.each(function(d) {
+            var circle2 = this;
+            var subforce = new Victor(circle2.cx.animVal.value - circle1.cx.animVal.value,
+                circle2.cy.animVal.value - circle1.cy.animVal.value);
+            subforce = subforce.normalize();
+            if(distance(circle1, circle2) > 0) {
+                var magnitude = (constant * circle1.r.animVal.value * circle2.r.animVal.value /
+                    Math.pow(distance(circle1, circle2), 2));
+            } else {
+                var magnitude = 0;
+            }
+            var magVec = new Victor(magnitude, magnitude);
+            subforce = subforce.multiply(magVec);
+            force.add(subforce);
+        })
+        forces.push(force);
+    })
+    var counter = 0;
+    circles.each(function(i) {
+        var circle1 = this;
+        /!*circles.each(function(i) {
+           var circle2 = this;
+           if(intersecting(circle1, circle2)) {
+               var direction = new Victor(circle1.cx.animVal.value - circle2.cx.animVal.value,
+                   circle1.cy.animVal.value - circle2.cy.animVal.value);
+               direction = direction.normalize();
+               var magnitude = ((circle1.r.animVal.value + circle2.r.animVal.value) - distance(circle1, circle2))/10;
+               console.log(magnitude);
+               var magVec = new Victor(magnitude, magnitude);
+               direction = direction.multiply(magVec);
+               forces[counter].add(direction);
+           }
+        });*!/
+        d3.select(circle1).attr('cx', function() { return i.x + forces[counter].x})
+              .attr('cy', function() { return i.y + forces[counter].y});
+        counter++;
+    })
+}*/
+
+/*function distance(circle1, circle2) {
+    return Math.sqrt(Math.pow((circle1.cx.animVal.value - circle2.cx.animVal.value), 2) +
+        Math.pow((circle1.cy.animVal.value - circle2.cy.animVal.value), 2));
+}*/
+
+/*function intersecting(circle1, circle2) {
+    return (distance(circle1, circle2) < (circle1.r.animVal.value + circle2.r.animVal.value));
+}*/
+
+/*var packing = d3.pack().size([height, width]).padding(5);
+    var packRoot = d3.hierarchy(price_data);
+    console.log(packRoot);
+    var packNodes = packRoot.descendants();
+    packing(packRoot);
+    console.log(packNodes);
+    var svg = d3.select('body').append('svg').attr('width', 1000).attr('height', 1000);
+    svg.append('g').selectAll('circle').data(packNodes).enter().append('circle')
+        .attr('cx', d=> d.x)
+        .attr('cy', d=> d.y)
+        .attr('r', d=> d.r)
+        .attr('fill', '#f00')
+        .attr('opacity', '.2')
+        .attr('id', d=> d.data.name)
+        .attr('transform', 'translate(200,200)')
+        .attr('class', function(d) {
+            if(d.depth == 2) {
+                return "leaf";
+            } else {
+                return "nonleaf";
+            }
+        });
+    console.log(price_data);
+    console.log(packing);
+    var circles = d3.select('svg').selectAll('.leaf');
+    for(var i = 0; i < 1; i++) {
+        forces(circles);
+    }*/
 
 function find_valid_data(node){
     if(node.children.length > 0 && !node.children[0].is_leaf) {
@@ -510,6 +546,11 @@ function intersects(circ1, circ2){
     return (dist <= (circ1.radius + circ2.radius) && (dist >= Math.abs(circ1.radius - circ2.radius)));
 }
 function intersection(circ1, circ2){
+    var c1= new Victor(circ1.x, circ1.y)
+    var c2 = new Victor(circ2.x, circ2.y)
+    if(c1.distance(c2) < circ1.radius + circ2.radius){
+        return true;
+    }
 
 }
 function leftmost_intersect(intersections){
