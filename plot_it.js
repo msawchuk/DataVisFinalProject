@@ -87,7 +87,9 @@ function plot_it() {
     catColors.push(d3.lab(50.22, -1, 38.39));
     catColors.push(d3.lab(51.87, -30.43, 2.67));
 
-    var force = d3.forceSimulation(price_data.children[0].children)
+    forceFunction(price_data, catColors, svg, 0);
+
+    /*var force = d3.forceSimulation(price_data.children[0].children)
         .force("gravity", d3.forceManyBody().strength(600))
         .force("collide", d3.forceCollide(d=>d.radius).iterations(300))
         .force("center", d3.forceCenter(600,450));
@@ -194,10 +196,50 @@ function plot_it() {
                             createEnvelope(price_data.children[2].children, price_data.children[2].enlargement);
                         })
                 })
-        });
+        });*/
 
     console.log(price_data);
 
+}
+
+function forceFunction(price_data, colors, svg, childNum) {
+    var force = d3.forceSimulation(price_data.children[childNum].children)
+        .force("gravity", d3.forceManyBody().strength(600))
+        .force("collide", d3.forceCollide(d=>d.radius).iterations(300))
+        .force("center", d3.forceCenter(600 - childNum * 150, 600 - childNum * 150));
+    var t = svg.selectAll('q').data(price_data.children[childNum].children).enter().append('circle')
+        .attr('cx', d=> d.x)
+        .attr('cy', d=> d.y)
+        .attr('r', d=> d.radius - 4)
+        .attr('fill', d=> d3.lab(50 + 0.5*color_scale(d.value),100 - color_scale(d.value),0.5 *color_scale(d.value)))
+        .attr('opacity', '.2')
+        .attr('category', d=>d.cat)
+        .attr('stroke', d=>colors[d.cat])
+        .attr('stroke-width', '3')
+    var ticked = function() {
+        t
+            .attr("cx", function(d) { return d.x; })
+            .attr("cy", function(d) { return d.y; });
+    }
+    force
+        .nodes(price_data.children[childNum].children)
+        .on("tick", ticked)
+        .on("end", function() {
+            var arcdata = createEnvelope(price_data.children[childNum].children, price_data.children[childNum].enlargement);
+            arcdata.forEach(function (element) {
+                var path = d3.path();
+                path.arc(element.x, element.y, element.radius, element.startAngle - Math.PI / 2, element.endAngle - Math.PI / 2, false);
+                svg.append('path')
+                    .attr('d', path)
+                    .attr('fill', 'none')
+                    .attr('stroke', '#000')
+                    .attr('stroke-width', '4')
+
+            })
+            if(childNum > price_data.children.length) {
+                forceFunction(price_data, colors, svg, childNum + 1)
+            }
+        })
 }
 
 function createEnvelope(nodes, enlargement) {
