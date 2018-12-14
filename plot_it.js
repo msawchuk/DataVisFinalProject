@@ -7,6 +7,7 @@ var height = 500;
 function remove_leaves(node){
     if(node.children[0].is_leaf){
         node.children = []
+        node.is_leaf = true;
     }
     else{
         for(var i = 0; i< node.children.length; i++){
@@ -87,7 +88,7 @@ function plot_it() {
     catColors.push(d3.lab(50.22, -1, 38.39));
     catColors.push(d3.lab(51.87, -30.43, 2.67));
 
-    forceFunction(price_data, catColors, svg, 0);
+    forceFunction(price_data, catColors, svg);
 
     /*var force = d3.forceSimulation(price_data.children[0].children)
         .force("gravity", d3.forceManyBody().strength(600))
@@ -201,13 +202,39 @@ function plot_it() {
     console.log(price_data);
 
 }
+function getCentroid(node, isArr){
+    var massSum = 0;
+    var centroid = planck.Vec2(0,0);
+    if(isArr){
+        node.forEach(function(d){
+          centroid.x += d.x;
+          centroid.y += d.y
+        })
+        centroid.mul(1/node.length)
+    }
+    else{
+        node.children.forEach(function(d){
+            var mass = d.radius*node.enlargement *d.radius*node.enlargement *Math.PI;
+            massSum += mass;
+            centroid.x += d.x *mass
+            centroid.y += d.y *mass
+        })
+        centroid.mul(1.0/massSum)
+    }
+    return centroid;
 
-function forceFunction(price_data, colors, svg, childNum) {
-    var force = d3.forceSimulation(price_data.children[childNum].children)
+}
+function forceFunction(node, colors, svg) {
+    for(var i = 0; i < node.children.length; i++) {
+        if(!node.children[i].is_leaf) {
+            forceFunction(node.children[i], colors, svg);
+        }
+    }
+    var force = d3.forceSimulation(node.children)
         .force("gravity", d3.forceManyBody().strength(600))
         .force("collide", d3.forceCollide(d=>d.radius).iterations(300))
-        .force("center", d3.forceCenter(600 - childNum * 150, 600 - childNum * 150));
-    var t = svg.selectAll('q').data(price_data.children[childNum].children).enter().append('circle')
+        .force("center", d3.forceCenter(Math.random() * 600 + 100, Math.random() * 600 + 100));
+    var t = svg.selectAll('q').data(node.children).enter().append('circle')
         .attr('cx', d=> d.x)
         .attr('cy', d=> d.y)
         .attr('r', d=> d.radius - 4)
@@ -222,10 +249,10 @@ function forceFunction(price_data, colors, svg, childNum) {
             .attr("cy", function(d) { return d.y; });
     }
     force
-        .nodes(price_data.children[childNum].children)
+        .nodes(node.children)
         .on("tick", ticked)
         .on("end", function() {
-            var arcdata = createEnvelope(price_data.children[childNum].children, price_data.children[childNum].enlargement);
+            var arcdata = createEnvelope(node.children, node.enlargement);
             arcdata.forEach(function (element) {
                 var path = d3.path();
                 path.arc(element.x, element.y, element.radius, element.startAngle - Math.PI / 2, element.endAngle - Math.PI / 2, false);
@@ -234,14 +261,52 @@ function forceFunction(price_data, colors, svg, childNum) {
                     .attr('fill', 'none')
                     .attr('stroke', '#000')
                     .attr('stroke-width', '4')
-
             })
-            if(childNum > price_data.children.length) {
-                forceFunction(price_data, colors, svg, childNum + 1)
-            }
         })
 }
 
+function getLayout(root, svg) {
+    var centroids = []
+    for(var i = 0; i < root.children.length; i++) {
+        if(!root.is_leaf && !root.children[i].is_leaf) {
+            getLayout(root.children[i]);
+        }
+        root.children[i].centroid = getCentroid(root.children[i], false);
+        centroids.push(root.children[i].centroid)
+    }
+    var centroid = getCentroid(centroids, true)
+    layoutClusters(root, centroid)
+}
+function layoutClusters(root, centroid){
+    var world = planck.World({
+        gravity: planck.Vec2(0,0)
+    })
+    var clusters = []
+    for(var i = 0; i< root.children.length; i++){
+        clusters.push(createClusterBody(root.children[i], world))
+    }
+    var center = world.createBody(planck.Vec2(centroid.x, centroid.y));
+    cluster.forEach(function(cluster) {
+        var joint = planck.DistanceJoint( {
+            frequencyHz: 0.9,
+            dampingRatio: 0.001
+        },
+        center, center.getPosition(), cluster, cluster.getPosition())
+    })
+}
+function createClusterBody(cluster, world){
+    var body = world.createDynamicBody(cluster.centroid);
+    var circFD ={
+        density: 1,
+        friction: .00000001
+    }
+    for(var i = 0; i <cluster.children.length; i++){
+        var globalCenter = planck.Vec2(cluster.children[i].x, cluster.children[i].y);
+        var localCenter = globalCenter.sub(cluster.centroid);
+        var fixture = body.createFixture(planck.circle(localCenter, cluster.children[i].radius *cluster.enlargement, circleFD))
+    }
+    return body
+}
 function createEnvelope(nodes, enlargement) {
     var scale = d3.scaleLog()
         .domain([0.1,5])
