@@ -3,7 +3,10 @@ var start_date;
 var end_date;
 var width = 500;
 var height = 500;
-
+var countToOne = 0;
+var scale = d3.scaleLog()
+    .domain([0.1,5])
+    .range([0,0.8])
 function remove_leaves(node){
     if(node.children[0].is_leaf){
         node.children = []
@@ -57,10 +60,10 @@ function plot_it() {
     remove_leaves(price_data);
     var svg = d3.select('body').append('svg').attr('width', 1000).attr('height', 1000);
 
-    size_scale = d3.scaleLog()
+
+    var size_scale = d3.scaleLog()
         .domain([20, 1500])
         .range([10, 80])
-
     var nodes = [];
     var count = 0;
     category = 0;
@@ -72,6 +75,7 @@ function plot_it() {
             //element2.y = 750 * Math.random();
             //element2.radius = element2.value / 10;
             element2.radius = size_scale(element2.value);
+            element2.enlargedRadius = element2.radius
             element2.cat = category;
             nodes.push(element2);
             count++;
@@ -90,114 +94,7 @@ function plot_it() {
 
     forceFunction(price_data, catColors, svg);
 
-    /*var force = d3.forceSimulation(price_data.children[0].children)
-        .force("gravity", d3.forceManyBody().strength(600))
-        .force("collide", d3.forceCollide(d=>d.radius).iterations(300))
-        .force("center", d3.forceCenter(600,450));
-    var t = svg.selectAll('q').data(price_data.children[0].children).enter().append('circle')
-        .attr('cx', d=> d.x)
-        .attr('cy', d=> d.y)
-        .attr('r', d=> d.radius - 4)
-        .attr('fill', d=> d3.lab(50 + 0.5*color_scale(d.value),100 - color_scale(d.value),0.5 *color_scale(d.value)))
-        .attr('opacity', '.2')
-        .attr('category', d=>d.cat)
-        .attr('stroke', d=>catColors[d.cat])
-        .attr('stroke-width', '3')
-    var ticked = function() {
-        t
-            .attr("cx", function(d) { return d.x; })
-            .attr("cy", function(d) { return d.y; });
-    }
-    force
-        .nodes(price_data.children[0].children)
-        .on("tick", ticked)
-        .on("end", function() {
-            var arcdata = createEnvelope(price_data.children[0].children, price_data.children[0].enlargement);
-            arcdata.forEach(function(element) {
-                var path = d3.path();
-                path.arc(element.x, element.y, element.radius, element.startAngle-Math.PI/2, element.endAngle-Math.PI/2, false);
-                svg.append('path')
-                    .attr('d', path)
-                    .attr('fill', 'none')
-                    .attr('stroke', '#000')
-                    .attr('stroke-width', '4')
-            })
-            var force2 = d3.forceSimulation(price_data.children[1].children)
-                .force("gravity", d3.forceManyBody().strength(600))
-                .force("collide", d3.forceCollide(d=>d.radius).iterations(300))
-                .force("center", d3.forceCenter(200,600));
-            var u = svg.selectAll('q').data(price_data.children[1].children).enter().append('circle')
-                .attr('cx', d=> d.x)
-                .attr('cy', d=> d.y)
-                .attr('r', d=> d.radius - 4)
-                .attr('fill', d=> d3.lab(50 + 0.5*color_scale(d.value),100 - color_scale(d.value),0.5 *color_scale(d.value)))
-                .attr('opacity', '.2')
-                .attr('category', d=>d.cat)
-                .attr('stroke', d=>catColors[d.cat])
-                .attr('stroke-width', '3')
-            ticked = function() {
-                u
-                    .attr("cx", function(d) { return d.x; })
-                    .attr("cy", function(d) { return d.y; });
-            }
-            force2
-                .nodes(price_data.children[1].children)
-                .on("tick", ticked)
-                .on("end", function() {
-                    var arcdata = createEnvelope(price_data.children[1].children, price_data.children[1].enlargement);
-                    arcdata.forEach(function(element) {
-                        var path = d3.path();
-                        path.arc(element.x, element.y, element.radius, element.startAngle-Math.PI/2, element.endAngle-Math.PI/2, false);
-                        svg.append('path')
-                            .attr('d', path)
-                            .attr('fill', 'none')
-                            .attr('stroke', '#000')
-                            .attr('stroke-width', '4')
-                    })
-                    var force3 = d3.forceSimulation(price_data.children[2].children)
-                        .force("gravity", d3.forceManyBody().strength(600))
-                        .force("collide", d3.forceCollide(d=>d.radius).iterations(300))
-                        .force("center", d3.forceCenter(350,200));
-                    var v = svg.selectAll('q').data(price_data.children[2].children).enter().append('circle')
-                        .attr('cx', d=> d.x)
-                        .attr('cy', d=> d.y)
-                        .attr('r', d=> d.radius - 4)
-                        .attr('fill', d=> d3.lab(50 + 0.5*color_scale(d.value),100 - color_scale(d.value),0.5 *color_scale(d.value)))
-                        .attr('opacity', '.2')
-                        .attr('category', d=>d.cat)
-                        .attr('stroke', d=>catColors[d.cat])
-                        .attr('stroke-width', '3')
-                    ticked = function() {
-                        v
-                            .attr("cx", function(d) { return d.x; })
-                            .attr("cy", function(d) { return d.y; });
-                    }
-                    force3
-                        .nodes(price_data.children[2].children)
-                        .on("tick", ticked)
-                        .on("end", function() {
-                            var arcdata = createEnvelope(price_data.children[2].children, price_data.children[2].enlargement);
-                            arcdata.forEach(function(element) {
-                                var path = d3.path();
-                                path.arc(element.x, element.y, element.radius, element.startAngle-Math.PI/2, element.endAngle-Math.PI/2, false);
-                                svg.append('path')
-                                    .attr('d', path)
-                                    .attr('fill', 'none')
-                                    .attr('stroke', '#000')
-                                    .attr('stroke-width', '4')
-                            })
-                            svg.selectAll('circle').each(function(d) {
-                                svg.append('text')
-                                    .attr('x', this.cx.animVal.value)
-                                    .attr('y', this.cy.animVal.value)
-                                    .attr('text-anchor', 'middle')
-                                    .attr('font-size', '12px')
-                                    .text(d.name);
-                            })
-                            createEnvelope(price_data.children[2].children, price_data.children[2].enlargement);
-                        })
-                })
-        });*/
+
 
     console.log(price_data);
 
@@ -252,30 +149,44 @@ function forceFunction(node, colors, svg) {
         .nodes(node.children)
         .on("tick", ticked)
         .on("end", function() {
-            var arcdata = createEnvelope(node.children, node.enlargement);
-            arcdata.forEach(function (element) {
-                var path = d3.path();
-                path.arc(element.x, element.y, element.radius, element.startAngle - Math.PI / 2, element.endAngle - Math.PI / 2, false);
-                svg.append('path')
-                    .attr('d', path)
-                    .attr('fill', 'none')
-                    .attr('stroke', '#000')
-                    .attr('stroke-width', '4')
-            })
+
+
+            countToOne++
+            getLayout(price_data, svg, countToOne)
         })
+
 }
 
-function getLayout(root, svg) {
-    var centroids = []
-    for(var i = 0; i < root.children.length; i++) {
-        if(!root.is_leaf && !root.children[i].is_leaf) {
-            getLayout(root.children[i]);
-        }
-        root.children[i].centroid = getCentroid(root.children[i], false);
-        centroids.push(root.children[i].centroid)
+function getLayout(root, svg, count) {
+    console.log(count)
+    //only execute on last end
+    if(countToOne  == root.children.length -1) {
+        console.log(root)
+        var rootEnlargement = root.enlargement
+        var adjustedCircles =  layoutClusters(root, planck.Vec2(500, 500))
+        var nodes = []
+        getNodes(root, nodes)
+        matchCircles(nodes, adjustedCircles);
+        console.log(root.enlargement)
+        createEnvelope(root, nodes, rootEnlargement)
     }
-    var centroid = getCentroid(centroids, true)
-    layoutClusters(root, centroid)
+}
+function getNodes(root, nodes){
+    if(!root.is_leaf){
+        for(var i = 0; i<root.children.length; i++){
+            getNodes(root.children[i], nodes)
+        }
+    }
+    else{
+        nodes.push(root);
+    }
+}
+function matchCircles(nodes, circles){
+   for(var i = 0; i<nodes.length; i++){
+       nodes[i].x = circles[i].x
+       nodes[i].y = circles[i].y
+       nodes[i].enlargedRadius = circles[i].enlargedRadius
+   }
 }
 function layoutClusters(root, centroid){
     var world = planck.World({
@@ -283,41 +194,104 @@ function layoutClusters(root, centroid){
     })
     var clusters = []
     for(var i = 0; i< root.children.length; i++){
+        root.children[i].centroid = getCentroid(root.children[i],false)
         clusters.push(createClusterBody(root.children[i], world))
     }
+    console.log(clusters)
+    console.log(centroid)
     var center = world.createBody(planck.Vec2(centroid.x, centroid.y));
-    cluster.forEach(function(cluster) {
+    clusters.forEach(function(cluster) {
+        console.log(cluster.getPosition())
         var joint = planck.DistanceJoint( {
             frequencyHz: 0.9,
             dampingRatio: 0.001
         },
-        center, center.getPosition(), cluster, cluster.getPosition())
+        center, center.getPosition(), cluster, cluster.getPosition());
+        joint.m_length = 0;
+        world.createJoint(joint);
     })
+    var step = 1/60.0 //60 fps
+    var veliter = 6
+    var positer = 2
+    for(var i = 0; i< 1000; i++){
+        world.step(step, veliter, positer)
+    }
+    var ret= [];
+    for(var body = world.getBodyList(); body; body = body.getNext()){
+        for(var fix = body.getFixtureList(); fix; fix = fix.getNext()){
+            if(fix.getShape().getType() === planck.Circle.TYPE){
+                var center = body.getWorldPoint(fix.getShape().getCenter())
+                console.log(center.x)
+                var radius= (fix.getShape().getRadius())
+                console.log(radius)
+                //goes in reverse order
+                ret.push({
+                    x: center.x,
+                    y: center.y,
+                    enlargedRadius: radius
+                })
+               d3.selectAll('svg').append('circle')
+                    .attr('cx', function(){
+                        console.log(center.x)
+                        return center.x
+                    })
+                    .attr('cy', center.y)
+                    .attr('r', radius)
+                    .attr('stroke', '#000')
+                    .attr('fill', 'none')
+
+
+            }
+        }
+    }
+    //puts stuff in order
+    ret.reverse();
+    return ret;
 }
 function createClusterBody(cluster, world){
+    console.log(cluster)
     var body = world.createDynamicBody(cluster.centroid);
     var circFD ={
         density: 1,
-        friction: .00000001
+        friction: .0001
     }
+    console.log(cluster.centroid)
     for(var i = 0; i <cluster.children.length; i++){
         var globalCenter = planck.Vec2(cluster.children[i].x, cluster.children[i].y);
         var localCenter = globalCenter.sub(cluster.centroid);
-        var fixture = body.createFixture(planck.circle(localCenter, cluster.children[i].radius *cluster.enlargement, circleFD))
+        console.log( cluster.enlargement)
+        console.log(cluster.children[i])
+       // var fixture = body.createFixture(planck.Circle(localCenter, cluster.children[i].radius *cluster.enlargement), circFD);
+        body.createFixture(planck.Circle(localCenter,  cluster.children[i].radius *(1+scale(cluster.enlargement))), circFD);
+
     }
+    console.log(body)
     return body
 }
-function createEnvelope(nodes, enlargement) {
-    var scale = d3.scaleLog()
-        .domain([0.1,5])
-        .range([0,0.8])
+function createEnvelope(node, nodes, enlargement) {
+    console.log(nodes)
+    console.log(enlargement)
     enlargement = scale(enlargement);
+    console.log(enlargement)
+    node.enlargement = enlargement
+    console.log(enlargement)
    var bubbles =  getOuterCircle(nodes, enlargement);
-   return createBubble(bubbles);
+   var paths = createBubble(bubbles)
+    console.log(paths)
+       paths.forEach(function (element) {
+       var path = d3.path();
+       path.arc(element.x, element.y, element.radius, element.startAngle - Math.PI / 2, element.endAngle - Math.PI / 2, false);
+       svg.append('path')
+           .attr('d', path)
+           .attr('fill', 'none')
+           .attr('stroke', '#000')
+           .attr('stroke-width', '4')
+   });
    //var arcs = createBubble(bubbles);
    //return makePaths(arcs);
 
 }
+
 
 /*function getCat(data, catNum) {
     var arr = [];
@@ -442,23 +416,26 @@ function hasSameName(circle1, circle2) {
 }
 
 
-function buildContour(nodes, enlargement){
-    var outerCircs = getOuterCircle(nodes, enlargement);
-}
+
 function getOuterCircle(nodes, enlargement){
     //get deep copy
+    console.log(enlargement)
+    console.log(nodes)
     var bigCircles = nodes.map(function (d) {
         return Object.assign({}, d)
     });
     bigCircles.forEach(function (circle) {
-        circle.radius += enlargement*circle.radius;
+
+        circle.radius = circle.enlargedRadius + enlargement*circle.enlargedRadius;
     });
-    var leftmost = getLeftmost(bigCircles);
+    console.log(bigCircles)
+   var leftmost = getLeftmost(bigCircles);
     for (var i = 1; i < bigCircles.length; i++) {
         if (bigCircles[i].x - bigCircles[i].r < leftmost.x - leftmost.r) {
             leftmost = bigCircles[i];
         }
     }
+    console.log(leftmost)
     var bubbles = [];
     var curCircle = leftmost;
     var dir = new Victor(-1,0);
@@ -487,6 +464,7 @@ function getOuterCircle(nodes, enlargement){
         }
 
     }
+    console.log(bubbles)
     return bubbles
 }
 function getLeftmost(circles) {
@@ -628,6 +606,7 @@ function find_valid_data(node){
 function preprocess_tree(node, concat_names, depth) {
     node.full_name = depth==0 ? node.name : concat_names+'.'+node.name;
     node.depth = depth+1;
+    node.height = 4-node.depth;
     if(node.depth == 1)
         node.box = {ll:[0,0], ur:[1,1]};
 
