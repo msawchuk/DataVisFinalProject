@@ -10,14 +10,9 @@
 	<script type='text/javascript' src='victor.js'></script>
 	<script type='text/javascript' src='planck.js'></script>
 	<script type='text/javascript'>
-/*		d3.json('Data/college-majors/majors.json')
-			.then(function(data) {
-			    major_data = data;
-			    majors();
-			})*/
-		d3.json('Data/price.json')
+		d3.json('Data/college-majors/majors.json')
 		  .then(function(data)  {
-			  price_data = data;
+			  major_data = data;
 			  plot_it();
 		  })
 	</script>

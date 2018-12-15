@@ -50,41 +50,79 @@ function deviation_pct(ticker){
     ticker.deviation_pct = ticker.std_deviation / ticker.value;
 }
 function plot_it() {
-    start_date = new Date(2017, 0, 1);
-    end_date = new Date(2018, 0, 1);
 
-    preprocess_tree(price_data, '', 0, start_date, end_date);
-    find_valid_data(price_data);
-    aggregate(price_data);
-    std_dev(price_data)
-    remove_leaves(price_data);
-    var svg = d3.select('body').append('svg').attr('width', 1000).attr('height', 1000);
+    consolidated_major_data = {
+        name: "All Majors",
+        enlargement: 0,
+        count: 0,
+        is_leaf: false,
+        height: 3,
+        children: []
+    };
+    numCats = 0;
+    var catMap = new Map();
+    major_data.forEach(function(major) {
+        if(!catMap.has(major.Major_category)) {
+            catMap.set(major.Major_category, numCats);
+            consolidated_major_data.children.push({
+                major_category: major.Major_category,
+                enlargement: 0,
+                count: 0,
+                is_leaf: false,
+                height: 2,
+                children: []
+            });
+            numCats++;
+        }
+        consolidated_major_data.children[catMap.get(major.Major_category)].children.push({
+            major_name: major.Major,
+            median: major.Median,
+            enlargement: major.P75th - major.P25th,
+            count: major.Total,
+            major_category: major.Major_category,
+            height: 1,
+            is_leaf: true
+        });
+        consolidated_major_data.children[catMap.get(major.Major_category)].count += major.Total;
+        //consolidated_major_data.children[catMap.get(major.Major_category)].enlargement += major.enlargement;
+    })
+    consolidated_major_data.children.forEach(function(category) {
+        category.children.forEach(function(major) {
+            category.enlargement += major.enlargement * major.count / category.count;
+        })
+        consolidated_major_data.count += category.count;
+    });
+    consolidated_major_data.children.forEach(function(category) {
+        consolidated_major_data.enlargement += category.enlargement * category.count / consolidated_major_data.count;
+    })
+    var svg = d3.select('body').append('svg').attr('width', 5000).attr('height', 2000);
 
 
     var size_scale = d3.scaleLog()
-        .domain([20, 1500])
-        .range([10, 80])
+        .domain([20000, 80000])
+        .range([10, 60])
     var nodes = [];
     var count = 0;
     category = 0;
-    price_data.children.forEach(function(element) {
+    consolidated_major_data.children.forEach(function(element) {
         element.children.forEach(function(element2) {
-            element2.x = Math.cos(category / 3 * 2 * Math.PI) * (250 + 300 * Math.random()) + 400;
-            element2.y = Math.sin(category / 3 * 2 * Math.PI) * (150 + 350 * Math.random()) + 400;
-            //element2.x = 750 * Math.random();
-            //element2.y = 750 * Math.random();
+            element2.x = Math.cos(category / 16 * 2 * Math.PI) * (250 + 800 * Math.random()) + 400;
+            element2.y = Math.sin(category / 16 * 2 * Math.PI) * (150 + 850 * Math.random()) + 400;
+            //element2.x = Math.abs(Math.cos(category / 16 * 2 * Math.PI)) * 400 + 100 * count + Math.random() * 200;
+            //element2.y = Math.abs(Math.cos(category / 16 * 2 * Math.PI)) * 400 + 100 * count + Math.random() * 200;
             //element2.radius = element2.value / 10;
-            element2.radius = size_scale(element2.value);
-            element2.enlargedRadius = element2.radius
-            element2.cat = category;
+            element2.radius = size_scale(element2.median);
+            element2.enlargedRadius = element2.radius;
+            element2.cat = element2.major_category;
             nodes.push(element2);
             count++;
         })
         category++;
+        count = 0;
     })
 
     color_scale = d3.scaleLog()
-        .domain([1, 1500])
+        .domain([20000, 80000])
         .range([0, 100]);
 
     var catColors = [];
@@ -92,12 +130,12 @@ function plot_it() {
     catColors.push(d3.lab(50.22, -1, 38.39));
     catColors.push(d3.lab(51.87, -30.43, 2.67));
 
-    forceFunction(price_data, catColors, svg);
+    forceFunction(consolidated_major_data, catColors, svg);
 
     d3
 
 
-    console.log(price_data);
+    console.log(consolidated_major_data);
 
 }
 function getCentroid(node, isArr){
@@ -131,7 +169,7 @@ function forceFunction(node, colors, svg) {
     var force = d3.forceSimulation(node.children)
         .force("gravity", d3.forceManyBody().strength(600))
         .force("collide", d3.forceCollide(d=>d.radius).iterations(300))
-        .force("center", d3.forceCenter(Math.random() * 600 + 100, Math.random() * 600 + 100));
+        .force("center", d3.forceCenter(Math.random() * 1200 + 100, Math.random() * 1200 + 100));
     /*    var t = svg.selectAll('q').data(node.children).enter().append('circle')
             .attr('cx', d=> d.x)
             .attr('cy', d=> d.y)
@@ -153,9 +191,9 @@ function forceFunction(node, colors, svg) {
 
 
             countToOne++
-            getLayout(price_data,price_data, svg, countToOne,colors)
-            console.log(price_data)
-            drawContour(price_data, price_data,svg, countToOne, colors)
+            getLayout(consolidated_major_data,consolidated_major_data, svg, countToOne,colors)
+            console.log(consolidated_major_data)
+            drawContour(consolidated_major_data, consolidated_major_data,svg, countToOne, colors)
         })
 
 }
@@ -208,13 +246,14 @@ function getLayout(data_root,root ,svg, count, colors) {
             .attr('cx', d => d.x)
             .attr('cy', d => d.y)
             .attr('r', d => d.radius )
-            .attr('fill', d => d3.lab(50 + 0.5 * color_scale(d.value), 100 - color_scale(d.value), 0.5 * color_scale(d.value)))
+            .attr('fill', d => d3.lab(50 + 0.5 * color_scale(d.median), 100 - color_scale(d.median), 0.5 * color_scale(d.median)))
             .attr('opacity', '.2')
             .attr('category', d => d.cat)
             .attr('stroke', d => colors[d.cat])
             .attr('id', d=> d.name)
             .attr('stroke-width', '3');
     }
+    console.log("get layout reached")
 
 }
 function getNodes(root, nodes){
@@ -644,6 +683,54 @@ function intersects(circ1, circ2){
     var dy = circ1.y - circ2.y;
     var dist = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
     return (dist <= (circ1.radius + circ2.radius));
+}
+
+function majors() {
+    consolidated_major_data = {
+        name: "All Majors",
+        enlargement: 0,
+        count: 0,
+        is_leaf: false,
+        height: 3,
+        children: []
+    };
+    numCats = 0;
+    var catMap = new Map();
+    major_data.forEach(function(major) {
+        if(!catMap.has(major.Major_category)) {
+            catMap.set(major.Major_category, numCats);
+            consolidated_major_data.children.push({
+                major_category: major.Major_category,
+                enlargement: 0,
+                count: 0,
+                is_leaf: false,
+                height: 2,
+                children: []
+            });
+            numCats++;
+        }
+        consolidated_major_data.children[catMap.get(major.Major_category)].children.push({
+            major_name: major.Major,
+            median: major.Median,
+            enlargement: major.P75th - major.P25th,
+            count: major.Total,
+            major_category: major.Major_category,
+            height: 1,
+            is_leaf: true
+        });
+        consolidated_major_data.children[catMap.get(major.Major_category)].count += major.Total;
+        //consolidated_major_data.children[catMap.get(major.Major_category)].enlargement += major.enlargement;
+    })
+    consolidated_major_data.children.forEach(function(category) {
+        category.children.forEach(function(major) {
+            category.enlargement += major.enlargement * major.count / category.count;
+        })
+        consolidated_major_data.count += category.count;
+    });
+    consolidated_major_data.children.forEach(function(category) {
+        consolidated_major_data.enlargement += category.enlargement * category.count / consolidated_major_data.count;
+    })
+    console.log(consolidated_major_data);
 }
 
 /*

@@ -1222,19 +1222,6 @@
    "P75th": 90000
  },
  {
-   "Major_code": 4000,
-   "Major": "MULTI/INTERDISCIPLINARY STUDIES",
-   "Major_category": "Interdisciplinary",
-   "Total": 45199,
-   "Employed": 35706,
-   "Employed_full_time_year_round": 26038,
-   "Unemployed": 2990,
-   "Unemployment_rate": 0.077268968,
-   "Median": 43000,
-   "P25th": 32000,
-   "P75th": 55000
- },
- {
    "Major_code": 4001,
    "Major": "INTERCULTURAL AND INTERNATIONAL STUDIES",
    "Major_category": "Humanities & Liberal Arts",
