@@ -105,8 +105,8 @@ function getCentroid(node, isArr){
     var centroid = planck.Vec2(0,0);
     if(isArr){
         node.forEach(function(d){
-          centroid.x += d.x;
-          centroid.y += d.y
+            centroid.x += d.x;
+            centroid.y += d.y
         })
         centroid.mul(1/node.length)
     }
@@ -132,20 +132,20 @@ function forceFunction(node, colors, svg) {
         .force("gravity", d3.forceManyBody().strength(600))
         .force("collide", d3.forceCollide(d=>d.radius).iterations(300))
         .force("center", d3.forceCenter(Math.random() * 600 + 100, Math.random() * 600 + 100));
-/*    var t = svg.selectAll('q').data(node.children).enter().append('circle')
-        .attr('cx', d=> d.x)
-        .attr('cy', d=> d.y)
-        .attr('r', d=> d.radius - 4)
-        .attr('fill', d=> d3.lab(50 + 0.5*color_scale(d.value),100 - color_scale(d.value),0.5 *color_scale(d.value)))
-        .attr('opacity', '.2')
-        .attr('category', d=>d.cat)
-        .attr('stroke', d=>colors[d.cat])
-        .attr('stroke-width', '3')
-    var ticked = function() {
-        t
-            .attr("cx", function(d) { return d.x; })
-            .attr("cy", function(d) { return d.y; });
-    }*/
+    /*    var t = svg.selectAll('q').data(node.children).enter().append('circle')
+            .attr('cx', d=> d.x)
+            .attr('cy', d=> d.y)
+            .attr('r', d=> d.radius - 4)
+            .attr('fill', d=> d3.lab(50 + 0.5*color_scale(d.value),100 - color_scale(d.value),0.5 *color_scale(d.value)))
+            .attr('opacity', '.2')
+            .attr('category', d=>d.cat)
+            .attr('stroke', d=>colors[d.cat])
+            .attr('stroke-width', '3')
+        var ticked = function() {
+            t
+                .attr("cx", function(d) { return d.x; })
+                .attr("cy", function(d) { return d.y; });
+        }*/
     force
         .nodes(node.children)
         //.on("tick", ticked)
@@ -203,17 +203,17 @@ function getLayout(data_root,root ,svg, count, colors) {
         getNodes(root, nodes)
         root.countourCircles = matchCircles(nodes, adjustedCircles);
 
-            //draw leaves
-            svg.selectAll('q').data(nodes).enter().append('circle')
-                .attr('cx', d => d.x)
-                .attr('cy', d => d.y)
-                .attr('r', d => d.radius )
-                .attr('fill', d => d3.lab(50 + 0.5 * color_scale(d.value), 100 - color_scale(d.value), 0.5 * color_scale(d.value)))
-                .attr('opacity', '.2')
-                .attr('category', d => d.cat)
-                .attr('stroke', d => colors[d.cat])
-                .attr('stroke-width', '3');
-        }
+        //draw leaves
+        svg.selectAll('q').data(nodes).enter().append('circle')
+            .attr('cx', d => d.x)
+            .attr('cy', d => d.y)
+            .attr('r', d => d.radius )
+            .attr('fill', d => d3.lab(50 + 0.5 * color_scale(d.value), 100 - color_scale(d.value), 0.5 * color_scale(d.value)))
+            .attr('opacity', '.2')
+            .attr('category', d => d.cat)
+            .attr('stroke', d => colors[d.cat])
+            .attr('stroke-width', '3');
+    }
 
 }
 function getNodes(root, nodes){
@@ -228,18 +228,18 @@ function getNodes(root, nodes){
 }
 function matchCircles(nodes, circles){
     var newNodes = []
-   for(var i = 0; i<nodes.length; i++){
-       newNodes.push({
-           x: circles[i].x,
-           y: circles[i].y,
-           radius: circles[i].enlargedRadius,
-           name: nodes[i].name
-       })
-       nodes[i].x = circles[i].x
-       nodes[i].y = circles[i].y
-   }
-   console.log(newNodes)
-   return newNodes;
+    for(var i = 0; i<nodes.length; i++){
+        newNodes.push({
+            x: circles[i].x,
+            y: circles[i].y,
+            radius: circles[i].enlargedRadius,
+            name: nodes[i].name
+        })
+        nodes[i].x = circles[i].x
+        nodes[i].y = circles[i].y
+    }
+    console.log(newNodes)
+    return newNodes;
 }
 function layoutClusters(root, centroid){
     var world = planck.World({
@@ -256,10 +256,10 @@ function layoutClusters(root, centroid){
     clusters.forEach(function(cluster) {
         console.log(cluster.getPosition())
         var joint = planck.DistanceJoint( {
-            frequencyHz: 0.9,
-            dampingRatio: 0.001
-        },
-        center, center.getPosition(), cluster, cluster.getPosition());
+                frequencyHz: 0.9,
+                dampingRatio: 0.001
+            },
+            center, center.getPosition(), cluster, cluster.getPosition());
         joint.m_length = 0;
         world.createJoint(joint);
     })
@@ -304,7 +304,7 @@ function createClusterBody(cluster, world){
         var localCenter = globalCenter.sub(cluster.centroid);
         console.log( cluster.enlargement)
         console.log(cluster.children[i])
-       // var fixture = body.createFixture(planck.Circle(localCenter, cluster.children[i].radius *cluster.enlargement), circFD);
+        // var fixture = body.createFixture(planck.Circle(localCenter, cluster.children[i].radius *cluster.enlargement), circFD);
         body.createFixture(planck.Circle(localCenter,  cluster.children[i].radius *(1+scale(cluster.enlargement)) + 10), circFD);
 
     }
