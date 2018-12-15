@@ -7,6 +7,9 @@ var countToOne = 0;
 var scale = d3.scaleLog()
     .domain([0.1,5])
     .range([0,0.8])
+var major_scale = d3.scaleLinear()
+    .domain([20000, 60000])
+    .range([0, 0.8])
 function remove_leaves(node){
     if(node.children[0].is_leaf){
         node.children = []
@@ -680,6 +683,54 @@ function intersects(circ1, circ2){
     var dy = circ1.y - circ2.y;
     var dist = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
     return (dist <= (circ1.radius + circ2.radius));
+}
+
+function majors() {
+    consolidated_major_data = {
+        name: "All Majors",
+        enlargement: 0,
+        count: 0,
+        is_leaf: false,
+        height: 3,
+        children: []
+    };
+    numCats = 0;
+    var catMap = new Map();
+    major_data.forEach(function(major) {
+        if(!catMap.has(major.Major_category)) {
+            catMap.set(major.Major_category, numCats);
+            consolidated_major_data.children.push({
+                major_category: major.Major_category,
+                enlargement: 0,
+                count: 0,
+                is_leaf: false,
+                height: 2,
+                children: []
+            });
+            numCats++;
+        }
+        consolidated_major_data.children[catMap.get(major.Major_category)].children.push({
+            major_name: major.Major,
+            median: major.Median,
+            enlargement: major.P75th - major.P25th,
+            count: major.Total,
+            major_category: major.Major_category,
+            height: 1,
+            is_leaf: true
+        });
+        consolidated_major_data.children[catMap.get(major.Major_category)].count += major.Total;
+        //consolidated_major_data.children[catMap.get(major.Major_category)].enlargement += major.enlargement;
+    })
+    consolidated_major_data.children.forEach(function(category) {
+        category.children.forEach(function(major) {
+            category.enlargement += major.enlargement * major.count / category.count;
+        })
+        consolidated_major_data.count += category.count;
+    });
+    consolidated_major_data.children.forEach(function(category) {
+        consolidated_major_data.enlargement += category.enlargement * category.count / consolidated_major_data.count;
+    })
+    console.log(consolidated_major_data);
 }
 
 /*
