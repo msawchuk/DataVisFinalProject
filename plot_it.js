@@ -212,6 +212,7 @@ function getLayout(data_root,root ,svg, count, colors) {
             .attr('opacity', '.2')
             .attr('category', d => d.cat)
             .attr('stroke', d => colors[d.cat])
+            .attr('id', d=> d.name)
             .attr('stroke-width', '3');
     }
 
