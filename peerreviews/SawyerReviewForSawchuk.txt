@@ -1,0 +1,5 @@
+Peer Review by Cole Sawyer for Michael Sawchuk
+Preparation: Michael and I mostly worked on this project while in the same room. With that being said, he would always come with ideas on how to implement the next step in the program. 
+Contributions: We mostly used a "buddy coding" system where one of us would physically write the code and the other would think of abstract algorithms, debug already written parts of the code, or point out potential bugs. I would say we split the work very evenly.
+Respect: Michael and I work very well together and would build upon each other's ideas.
+Flexibility: we did not have many disagreements, but he was very flexible about meeting times. 
