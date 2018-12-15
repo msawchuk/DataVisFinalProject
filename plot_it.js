@@ -94,6 +94,7 @@ function plot_it() {
 
     forceFunction(price_data, catColors, svg);
 
+    d3
 
 
     console.log(price_data);
@@ -152,34 +153,68 @@ function forceFunction(node, colors, svg) {
 
 
             countToOne++
-            getLayout(price_data, svg, countToOne,colors)
+            getLayout(price_data,price_data, svg, countToOne,colors)
+            console.log(price_data)
+            drawContour(price_data, price_data,svg, countToOne, colors)
         })
 
 }
-
-function getLayout(root, svg, count, colors) {
-    console.log(count)
+function drawContour(data_root,root ,svg, count, colors){
     //only execute on last end
-    if(countToOne  == root.children.length -1) {
+    if(countToOne  == data_root.children.length-1) {
+        if(!root.children[0].is_leaf){
+            for(var i = 0; i<root.children.length; i++){
+                drawContour(data_root,root.children[i], svg, count ,colors);
+            }
+        }
+        else{
+            root.countourCircles = [];
+            for(var i = 0; i<root.children.length; i++){
+                root.countourCircles.push({
+                    x: root.children[i].x,
+                    y: root.children[i].y,
+                    radius: root.children[i].radius,
+                    name: root.children[i].name
+                })
+            }
+        }
         console.log(root)
-        var rootEnlargement = root.enlargement
-        var adjustedCircles =  layoutClusters(root, planck.Vec2(500, 500))
+        console.log(root.countourCircles)
+        var arcdata = createEnvelope(root.countourCircles, root.enlargement);
+        console.log(arcdata)
+        arcdata.forEach(function(element) {
+            var path = d3.path();
+            path.arc(element.x, element.y, element.radius, element.startAngle-Math.PI/2, element.endAngle-Math.PI/2, false);
+            svg.append('path')
+                .attr('d', path)
+                .attr('fill', 'none')
+                .attr('stroke', '#000')
+                .attr('stroke-width', '4')
+        })
+    }
+
+}
+function getLayout(data_root,root ,svg, count, colors) {
+    console.log(count)
+    if(countToOne  == data_root.children.length -1) {
+        console.log(root)
+        var adjustedCircles = layoutClusters(root, planck.Vec2(500, 500))
         var nodes = []
         getNodes(root, nodes)
-        matchCircles(nodes, adjustedCircles);
-        console.log(root.enlargement)
-        svg.selectAll('q').data(nodes).enter().append('circle')
-        .attr('cx', d=> d.x)
-        .attr('cy', d=> d.y)
-        .attr('r', d=> d.radius - 4)
-        .attr('fill', d=> d3.lab(50 + 0.5*color_scale(d.value),100 - color_scale(d.value),0.5 *color_scale(d.value)))
-        .attr('opacity', '.2')
-        .attr('category', d=>d.cat)
-        .attr('stroke', d=>colors[d.cat])
-        .attr('stroke-width', '3')
+        root.countourCircles = matchCircles(nodes, adjustedCircles);
 
-        //createEnvelope(root, nodes, rootEnlargement)
-    }
+            //draw leaves
+            svg.selectAll('q').data(nodes).enter().append('circle')
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y)
+                .attr('r', d => d.radius )
+                .attr('fill', d => d3.lab(50 + 0.5 * color_scale(d.value), 100 - color_scale(d.value), 0.5 * color_scale(d.value)))
+                .attr('opacity', '.2')
+                .attr('category', d => d.cat)
+                .attr('stroke', d => colors[d.cat])
+                .attr('stroke-width', '3');
+        }
+
 }
 function getNodes(root, nodes){
     if(!root.is_leaf){
@@ -192,11 +227,19 @@ function getNodes(root, nodes){
     }
 }
 function matchCircles(nodes, circles){
+    var newNodes = []
    for(var i = 0; i<nodes.length; i++){
+       newNodes.push({
+           x: circles[i].x,
+           y: circles[i].y,
+           radius: circles[i].enlargedRadius,
+           name: nodes[i].name
+       })
        nodes[i].x = circles[i].x
        nodes[i].y = circles[i].y
-       nodes[i].enlargedRadius = circles[i].enlargedRadius
    }
+   console.log(newNodes)
+   return newNodes;
 }
 function layoutClusters(root, centroid){
     var world = planck.World({
@@ -238,18 +281,8 @@ function layoutClusters(root, centroid){
                 ret.push({
                     x: center.x,
                     y: center.y,
-                    enlargedRadius: radius
+                    enlargedRadius: radius+10
                 })
-               d3.selectAll('svg').append('circle')
-                    .attr('cx', function(){
-                        console.log(center.x)
-                        return center.x
-                    })
-                    .attr('cy', center.y)
-                    .attr('r', radius-10)
-                    .attr('stroke', '#000')
-                    .attr('fill', 'none')
-
 
             }
         }
@@ -278,27 +311,12 @@ function createClusterBody(cluster, world){
     console.log(body)
     return body
 }
-function createEnvelope(node, nodes, enlargement) {
-    console.log(nodes)
-    console.log(enlargement)
+function createEnvelope(nodes, enlargement) {
     enlargement = scale(enlargement);
     console.log(enlargement)
-    node.enlargement = enlargement
-    console.log(enlargement)
-   var bubbles =  getOuterCircle(nodes, enlargement);
-   var paths = createBubble(bubbles)
-    console.log(paths)
-       paths.forEach(function (element) {
-       var path = d3.path();
-       path.arc(element.x, element.y, element.radius, element.startAngle - Math.PI / 2, element.endAngle - Math.PI / 2, false);
-       svg.append('path')
-           .attr('d', path)
-           .attr('fill', 'none')
-           .attr('stroke', '#000')
-           .attr('stroke-width', '4')
-   });
-   //var arcs = createBubble(bubbles);
-   //return makePaths(arcs);
+    var bubbles =  getOuterCircle(nodes, enlargement);
+    console.log(bubbles)
+    return createBubble(bubbles);
 
 }
 
@@ -328,55 +346,6 @@ function getForce(node1, node2) {
     return direction.multiply(magnitude);
 }
 
-/*function calculateMotion(parentNode, allData) {
-    var accelerations = [];
-        parentNode.children.forEach(function(element) {
-            var force = new Victor();
-            parentNode.children.forEach(function(element2) {
-                force = force.add(getForce(element, element2));
-            })
-            accelerations.push(force.divide(new Victor(element.radius, element.radius)));
-        })
-        var counter = 0;
-        parentNode.children.forEach(function(element) {
-            element.velocity = element.velocity.add(accelerations[counter]);
-            element.position = element.position.add(element.velocity);
-            counter++;
-        })
-
-}
-
-//Need to figure out a way to have the circles not be intersecting
-function calculateCollisions(data) {
-    data.children.forEach(function(element1) {
-        element1.children.forEach(function(circle1) {
-            if(intersectsAny(circle1, data)) {
-                data.children.forEach(function(element2) {
-                    element2.children.forEach(function(circle2) {
-                        if(intersecting(circle1, circle2) && (circle1.name != circle2.name)) {
-                            /!*circle1.newVel = new Victor(((circle1.radius - circle2.radius) / (circle1.radius + circle2.radius)),
-                                (circle1.radius - circle2.radius) / (circle1.radius + circle2.radius)).multiply(circle1.velocity)
-                                .add(new Victor (2 * circle2.radius / (circle1.radius + circle2.radius),
-                                    2 * circle2.radius / (circle1.radius + circle2.radius)).multiply(circle2.velocity));*!/
-                            var dist = circle1.radius + circle2.radius - distance(circle1, circle2);
-                            var initPos = circle1.position;
-                            var initPos1 = circle1.position;
-                            var dir = initPos.subtract(circle2.position).normalize();
-                            var translationVec = dir.multiply(new Victor(dist/2, dist/2));
-                            circle1.position = circle1.position.add(translationVec);
-                            circle1.velocity = new Victor();
-                            initPos = circle2.position;
-                            dir = initPos.subtract(initPos1).normalize();
-                            translationVec = dir.multiply(new Victor(dist/2, dist/2));
-                            circle2.position = circle2.position.add(translationVec);
-                            circle2.velocity = new Victor();
-                        }
-                    })
-                })
-            }
-        })
-    })
-}*/
 
 //moves all circles in moveableData so that they do not intersect any circles in allData
 //removes all intersections between circles if moveableData == allData, or if all circles that
@@ -429,19 +398,14 @@ function hasSameName(circle1, circle2) {
 
 function getOuterCircle(nodes, enlargement){
     //get deep copy
-    console.log(enlargement)
-    console.log(nodes)
-    var bigCircles = nodes.map(function (d) {
-        return Object.assign({}, d)
-    });
-    bigCircles.forEach(function (circle) {
-
-        circle.radius = circle.enlargedRadius + enlargement*circle.enlargedRadius;
-    });
+    var bigCircles = nodes;
     console.log(bigCircles)
-   var leftmost = getLeftmost(bigCircles);
+    bigCircles.forEach(function (circle) {
+        circle.radius += enlargement*circle.radius;
+    });
+    var leftmost = getLeftmost(bigCircles);
     for (var i = 1; i < bigCircles.length; i++) {
-        if (bigCircles[i].x - bigCircles[i].r < leftmost.x - leftmost.r) {
+        if (bigCircles[i].x - bigCircles[i].radius < leftmost.x - leftmost.radius) {
             leftmost = bigCircles[i];
         }
     }
@@ -474,7 +438,6 @@ function getOuterCircle(nodes, enlargement){
         }
 
     }
-    console.log(bubbles)
     return bubbles
 }
 function getLeftmost(circles) {
@@ -542,19 +505,19 @@ function nextClockwise(currentCircle, circles, dir){
             })
         }
     }
-        var leastAngle = 10;
-        var leastAngleIntersection;
-        console.log(intersections)
-        for (var i = 0; i < intersections.length; i++) {
-            var clone = intersections[i].point.clone()
-            var angle = get_angle(dir, clone.subtract(Victor(currentCircle.x, currentCircle.y)))
-            console.log(angle)
-            if (angle > .0001 && angle < leastAngle) {
-                leastAngle = angle
-                leastAngleIntersection = intersections[i];
-            }
+    var leastAngle = 10;
+    var leastAngleIntersection;
+    console.log(intersections)
+    for (var i = 0; i < intersections.length; i++) {
+        var clone = intersections[i].point.clone()
+        var angle = get_angle(dir, clone.subtract(Victor(currentCircle.x, currentCircle.y)))
+        console.log(angle)
+        if (angle > .0001 && angle < leastAngle) {
+            leastAngle = angle
+            leastAngleIntersection = intersections[i];
         }
-        console.log(leastAngleIntersection)
+    }
+    console.log(leastAngleIntersection)
     return leastAngleIntersection
 }
 
