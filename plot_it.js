@@ -131,7 +131,7 @@ function forceFunction(node, colors, svg) {
         .force("gravity", d3.forceManyBody().strength(600))
         .force("collide", d3.forceCollide(d=>d.radius).iterations(300))
         .force("center", d3.forceCenter(Math.random() * 600 + 100, Math.random() * 600 + 100));
-    var t = svg.selectAll('q').data(node.children).enter().append('circle')
+/*    var t = svg.selectAll('q').data(node.children).enter().append('circle')
         .attr('cx', d=> d.x)
         .attr('cy', d=> d.y)
         .attr('r', d=> d.radius - 4)
@@ -144,20 +144,20 @@ function forceFunction(node, colors, svg) {
         t
             .attr("cx", function(d) { return d.x; })
             .attr("cy", function(d) { return d.y; });
-    }
+    }*/
     force
         .nodes(node.children)
-        .on("tick", ticked)
+        //.on("tick", ticked)
         .on("end", function() {
 
 
             countToOne++
-            getLayout(price_data, svg, countToOne)
+            getLayout(price_data, svg, countToOne,colors)
         })
 
 }
 
-function getLayout(root, svg, count) {
+function getLayout(root, svg, count, colors) {
     console.log(count)
     //only execute on last end
     if(countToOne  == root.children.length -1) {
@@ -168,7 +168,17 @@ function getLayout(root, svg, count) {
         getNodes(root, nodes)
         matchCircles(nodes, adjustedCircles);
         console.log(root.enlargement)
-        createEnvelope(root, nodes, rootEnlargement)
+        svg.selectAll('q').data(nodes).enter().append('circle')
+        .attr('cx', d=> d.x)
+        .attr('cy', d=> d.y)
+        .attr('r', d=> d.radius - 4)
+        .attr('fill', d=> d3.lab(50 + 0.5*color_scale(d.value),100 - color_scale(d.value),0.5 *color_scale(d.value)))
+        .attr('opacity', '.2')
+        .attr('category', d=>d.cat)
+        .attr('stroke', d=>colors[d.cat])
+        .attr('stroke-width', '3')
+
+        //createEnvelope(root, nodes, rootEnlargement)
     }
 }
 function getNodes(root, nodes){
@@ -236,7 +246,7 @@ function layoutClusters(root, centroid){
                         return center.x
                     })
                     .attr('cy', center.y)
-                    .attr('r', radius)
+                    .attr('r', radius-10)
                     .attr('stroke', '#000')
                     .attr('fill', 'none')
 
@@ -262,7 +272,7 @@ function createClusterBody(cluster, world){
         console.log( cluster.enlargement)
         console.log(cluster.children[i])
        // var fixture = body.createFixture(planck.Circle(localCenter, cluster.children[i].radius *cluster.enlargement), circFD);
-        body.createFixture(planck.Circle(localCenter,  cluster.children[i].radius *(1+scale(cluster.enlargement))), circFD);
+        body.createFixture(planck.Circle(localCenter,  cluster.children[i].radius *(1+scale(cluster.enlargement)) + 10), circFD);
 
     }
     console.log(body)
