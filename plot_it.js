@@ -174,7 +174,7 @@ function getLayout(data_root,root ,svg, count, colors) {
             .attr('cy', d => d.y)
             .attr('r', d => d.radius )
             .attr('fill', d => d3.lab(50 + 0.5 * color_scale(d.value), 100 - color_scale(d.value), 0.5 * color_scale(d.value)))
-            .attr('opacity', '.2')
+            .attr('opacity', '1')
             .attr('category', d => d.cat)
             .attr('stroke', d => colors[d.cat])
             .attr('stroke-width', '3')
