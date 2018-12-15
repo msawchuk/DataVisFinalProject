@@ -112,17 +112,20 @@ function forceFunction(node, colors, svg) {
             forceFunction(node.children[i], colors, svg);
         }
     }
-    var force = d3.forceSimulation(node.children)
-        .force("gravity", d3.forceManyBody().strength(600))
-        .force("collide", d3.forceCollide(d=>d.radius).iterations(300))
-        .force("center", d3.forceCenter(Math.random() * 600 + 100, Math.random() * 600 + 100));
+    var  force = d3.forceSimulation()
+        .nodes(node.children)
+        .force("center", d3.forceCenter(500,500))
+        .force("collide", d3.forceCollide().iterations(200).radius(d=>d.radius))
+        .force("gravity", d3.forceManyBody())
+        .force("x", d3.forceX().strength(.7))
+        .force("y", d3.forceY().strength(.7))
 
     force
         .nodes(node.children)
         //.on("tick", ticked)
         .on("end", function() {
 
-
+            console.log('done')
             countToOne++
             getLayout(price_data,price_data, svg, countToOne,colors)
             drawContour(price_data, price_data,svg, countToOne, colors)
@@ -132,6 +135,7 @@ function forceFunction(node, colors, svg) {
 function drawContour(data_root,root ,svg, count, colors){
     //only execute on last end
     if(countToOne  == data_root.children.length-1) {
+        console.log('reached')
         if(!root.children[0].is_leaf){
             for(var i = 0; i<root.children.length; i++){
                 drawContour(data_root,root.children[i], svg, count ,colors);
@@ -149,6 +153,7 @@ function drawContour(data_root,root ,svg, count, colors){
             }
         }
         var arcdata = createEnvelope(root.countourCircles, root.enlargement);
+        console.log('test')
         arcdata.forEach(function(element) {
             var path = d3.path();
             path.arc(element.x, element.y, element.radius, element.startAngle-Math.PI/2, element.endAngle-Math.PI/2, false);
